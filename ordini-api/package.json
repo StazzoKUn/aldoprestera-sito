@@ -1,0 +1,36 @@
+{
+  "name": "ordini-api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Backend per la gestione degli ordini di un e-commerce (Express + Prisma + MariaDB di XAMPP)",
+  "type": "module",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "typecheck": "tsc --noEmit",
+    "db:check": "tsx scripts/check-db.ts",
+    "prisma:generate": "prisma generate",
+    "prisma:validate": "prisma validate",
+    "db:migrate": "prisma migrate dev",
+    "db:seed": "prisma db seed",
+    "db:studio": "prisma studio"
+  },
+  "dependencies": {
+    "@prisma/adapter-mariadb": "7.10.1",
+    "@prisma/client": "7.10.1",
+    "dotenv": "17.4.2",
+    "express": "5.3.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/express": "5.0.6",
+    "@types/node": "22.20.5",
+    "prisma": "7.10.1",
+    "tsx": "4.23.15",
+    "typescript": "6.0.3"
+  }
+}

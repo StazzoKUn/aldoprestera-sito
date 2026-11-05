@@ -1,0 +1,23 @@
+# Dipendenze e build
+node_modules/
+dist/
+.astro/
+/aldo-prestera/deploy/*.zip
+/ordini-api/src/generated/prisma
+
+# Segreti: restano solo in locale (copiare da .env.example)
+.env
+.env.*
+!.env.example
+
+# Dati runtime locali
+/aldo-prestera/.data/
+
+# Archivi originali (già estratti in _mockup e _handoff)
+/*.zip
+
+# Sessioni WhatsApp / OS
+.wwebjs_auth/
+.wwebjs_cache/
+Thumbs.db
+.DS_Store

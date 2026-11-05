@@ -1,0 +1,14 @@
+{
+  "name": "aldo-prestera-whatsapp-bot",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Invia le comande degli ordini online su WhatsApp al numero di Aldo",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "qrcode-terminal": "^0.12.0",
+    "whatsapp-web.js": "^1.34.7"
+  }
+}

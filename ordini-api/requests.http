@@ -1,0 +1,454 @@
+### Chiamate di esempio per l'estensione REST Client di VS Code.
+### Avvia prima il server con `npm run dev`, poi clicca "Send Request" sopra ogni chiamata.
+### Nel terminale del server vedi l'SQL eseguito; il risultato lo controlli in phpMyAdmin.
+###
+### I nomi dei campi JSON sono quelli delle colonne del database (snake_case).
+### Gli id nelle risposte sono stringhe ("1") perché in MariaDB sono BIGINT.
+### Le chiamate con nome (# @name ...) salvano la risposta: le successive riusano l'id.
+### Eseguile dall'alto verso il basso: la sezione ORDINI usa il cliente e l'indirizzo
+### creati nelle sezioni precedenti.
+
+@baseUrl = http://localhost:3000
+
+# ============================================================
+# SERVIZIO
+# ============================================================
+
+### Stato del servizio e del database
+GET {{baseUrl}}/health
+
+### Errore 404: endpoint inesistente
+GET {{baseUrl}}/non-esiste
+
+### Errore 400: body JSON malformato
+POST {{baseUrl}}/prodotti
+Content-Type: application/json
+
+{ "json non valido"
+
+# ============================================================
+# PRODOTTI
+# ============================================================
+
+### Crea un prodotto (201). Il prezzo è IVA inclusa; valuta e attivo hanno un default.
+# @name nuovoProdotto
+POST {{baseUrl}}/prodotti
+Content-Type: application/json
+
+{
+  "sku": "PIZ-MARG-01",
+  "nome": "Pizza Margherita",
+  "descrizione": "Pomodoro San Marzano, fiordilatte, basilico",
+  "prezzo": 8.50,
+  "aliquota_iva": 10
+}
+
+### Crea un secondo prodotto, non attivo (gli importi si possono mandare anche come stringa)
+# @name prodottoNonAttivo
+POST {{baseUrl}}/prodotti
+Content-Type: application/json
+
+{
+  "sku": "BIB-ACQ-05",
+  "nome": "Acqua naturale 0,5 L",
+  "prezzo": "1.50",
+  "aliquota_iva": "22.00",
+  "attivo": false
+}
+
+### Elenco paginato (default page=1, page_size=20)
+GET {{baseUrl}}/prodotti
+
+### Elenco filtrato: solo attivi, ricerca per nome o SKU, pagina 1 da 5
+GET {{baseUrl}}/prodotti?attivo=true&q=marg&page=1&page_size=5
+
+### Dettaglio
+GET {{baseUrl}}/prodotti/{{nuovoProdotto.response.body.id}}
+
+### Modifica parziale (PATCH): cambia solo il prezzo, il resto resta com'è
+PATCH {{baseUrl}}/prodotti/{{nuovoProdotto.response.body.id}}
+Content-Type: application/json
+
+{
+  "prezzo": 9.00
+}
+
+### Disattiva il prodotto (alternativa all'eliminazione se compare in ordini)
+PATCH {{baseUrl}}/prodotti/{{nuovoProdotto.response.body.id}}
+Content-Type: application/json
+
+{
+  "attivo": false
+}
+
+### Errore 409: SKU già esistente (indice UNIQUE prodotto_sku_key)
+POST {{baseUrl}}/prodotti
+Content-Type: application/json
+
+{
+  "sku": "PIZ-MARG-01",
+  "nome": "Doppione",
+  "prezzo": 1,
+  "aliquota_iva": 10
+}
+
+### Errore 400: validazione (nome vuoto, 3 decimali, IVA > 100, valuta non EUR, campo "id" non ammesso)
+POST {{baseUrl}}/prodotti
+Content-Type: application/json
+
+{
+  "id": 99,
+  "sku": "ERR-01",
+  "nome": "",
+  "prezzo": 1.999,
+  "aliquota_iva": 150,
+  "valuta": "USD"
+}
+
+### Errore 400: PATCH senza campi
+PATCH {{baseUrl}}/prodotti/{{nuovoProdotto.response.body.id}}
+Content-Type: application/json
+
+{}
+
+### Errore 400: filtro attivo non valido
+GET {{baseUrl}}/prodotti?attivo=forse
+
+### Errore 400: id non numerico
+GET {{baseUrl}}/prodotti/abc
+
+### Errore 404: prodotto inesistente
+GET {{baseUrl}}/prodotti/999999
+
+### Elimina il prodotto (204). Se compare in un ordine risponde 409
+### (FOREIGN KEY riga_ordine.prodotto_id ON DELETE RESTRICT): lo proveremo col modulo ordini.
+DELETE {{baseUrl}}/prodotti/{{nuovoProdotto.response.body.id}}
+
+# ============================================================
+# CLIENTI
+# ============================================================
+
+### Crea un cliente privato (201). Email normalizzata in minuscolo, codice fiscale in maiuscolo.
+# @name nuovoCliente
+POST {{baseUrl}}/clienti
+Content-Type: application/json
+
+{
+  "email": "Mario.Rossi@example.com",
+  "nome": "Mario",
+  "cognome": "Rossi",
+  "telefono": "+39 333 1234567",
+  "codice_fiscale": "rssmra80a01h501u"
+}
+
+### Crea un cliente azienda (con partita IVA)
+# @name secondoCliente
+POST {{baseUrl}}/clienti
+Content-Type: application/json
+
+{
+  "email": "amministrazione@bianchi-srl.example",
+  "nome": "Lucia",
+  "cognome": "Bianchi",
+  "partita_iva": "01234567890"
+}
+
+### Elenco paginato con ricerca per nome, cognome o email
+GET {{baseUrl}}/clienti?q=rossi&page=1&page_size=10
+
+### Dettaglio (include gli indirizzi, prima il predefinito)
+GET {{baseUrl}}/clienti/{{nuovoCliente.response.body.id}}
+
+### Modifica parziale
+PATCH {{baseUrl}}/clienti/{{nuovoCliente.response.body.id}}
+Content-Type: application/json
+
+{
+  "telefono": "02 1234567"
+}
+
+### Errore 409: email già usata (indice UNIQUE cliente_email_key)
+POST {{baseUrl}}/clienti
+Content-Type: application/json
+
+{
+  "email": "mario.rossi@example.com",
+  "nome": "Altro",
+  "cognome": "Mario"
+}
+
+### Errore 400: email non valida, nome vuoto, P.IVA errata, campo stripe_customer_id non ammesso
+POST {{baseUrl}}/clienti
+Content-Type: application/json
+
+{
+  "email": "non-una-email",
+  "nome": "",
+  "cognome": "Verdi",
+  "partita_iva": "123",
+  "stripe_customer_id": "cus_123"
+}
+
+### Errore 404: cliente inesistente
+GET {{baseUrl}}/clienti/999999
+
+# ============================================================
+# INDIRIZZI (annidati sotto il cliente)
+# ============================================================
+
+### Crea un indirizzo predefinito (201). nazione ha default "IT"; la provincia diventa "MI".
+# @name indirizzoCasa
+POST {{baseUrl}}/clienti/{{nuovoCliente.response.body.id}}/indirizzi
+Content-Type: application/json
+
+{
+  "destinatario": "Mario Rossi",
+  "via": "Via Roma 1",
+  "cap": "20121",
+  "citta": "Milano",
+  "provincia": "mi",
+  "predefinito": true
+}
+
+### Crea un secondo indirizzo predefinito: il primo torna predefinito = false
+### (nel terminale: SELECT ... FOR UPDATE, UPDATE indirizzo SET predefinito = false, INSERT)
+# @name indirizzoUfficio
+POST {{baseUrl}}/clienti/{{nuovoCliente.response.body.id}}/indirizzi
+Content-Type: application/json
+
+{
+  "destinatario": "Mario Rossi c/o Ufficio",
+  "via": "Corso Italia 10",
+  "cap": "00198",
+  "citta": "Roma",
+  "provincia": "RM",
+  "predefinito": true
+}
+
+### Indirizzo estero: CAP e provincia liberi
+POST {{baseUrl}}/clienti/{{nuovoCliente.response.body.id}}/indirizzi
+Content-Type: application/json
+
+{
+  "destinatario": "Mario Rossi",
+  "via": "Hauptstraße 5",
+  "cap": "10115",
+  "citta": "Berlin",
+  "provincia": "Berlin",
+  "nazione": "DE"
+}
+
+### Elenco degli indirizzi del cliente (prima il predefinito)
+GET {{baseUrl}}/clienti/{{nuovoCliente.response.body.id}}/indirizzi
+
+### Dettaglio
+GET {{baseUrl}}/clienti/{{nuovoCliente.response.body.id}}/indirizzi/{{indirizzoCasa.response.body.id}}
+
+### Rendi di nuovo predefinito il primo indirizzo
+PATCH {{baseUrl}}/clienti/{{nuovoCliente.response.body.id}}/indirizzi/{{indirizzoCasa.response.body.id}}
+Content-Type: application/json
+
+{
+  "predefinito": true
+}
+
+### Errore 400: per l'Italia CAP di 5 cifre e provincia di 2 lettere
+POST {{baseUrl}}/clienti/{{nuovoCliente.response.body.id}}/indirizzi
+Content-Type: application/json
+
+{
+  "destinatario": "Mario Rossi",
+  "via": "Via Verdi 3",
+  "cap": "201",
+  "citta": "Milano",
+  "provincia": "Milano"
+}
+
+### Errore 404: indirizzo che appartiene a un ALTRO cliente
+GET {{baseUrl}}/clienti/{{secondoCliente.response.body.id}}/indirizzi/{{indirizzoCasa.response.body.id}}
+
+### Errore 404: cliente inesistente
+GET {{baseUrl}}/clienti/999999/indirizzi
+
+### Elimina un indirizzo (204). Se è usato in un ordine risponde 409 (FK ON DELETE RESTRICT).
+DELETE {{baseUrl}}/clienti/{{nuovoCliente.response.body.id}}/indirizzi/{{indirizzoUfficio.response.body.id}}
+
+### Elimina il secondo cliente (204). Se ha ordini risponde 409 (FK ordine.cliente_id RESTRICT);
+### altrimenti i suoi indirizzi vengono eliminati con lui (FK indirizzo.cliente_id CASCADE).
+DELETE {{baseUrl}}/clienti/{{secondoCliente.response.body.id}}
+
+# ============================================================
+# ORDINI
+# ============================================================
+
+### Prodotti per gli ordini
+# @name prodPizza
+POST {{baseUrl}}/prodotti
+Content-Type: application/json
+
+{ "sku": "PIZ-DIAV-01", "nome": "Pizza Diavola", "prezzo": 9.50, "aliquota_iva": 10 }
+
+### 
+# @name prodBirra
+POST {{baseUrl}}/prodotti
+Content-Type: application/json
+
+{ "sku": "BIR-MOR-33", "nome": "Birra Moretti 33 cl", "prezzo": 3.20, "aliquota_iva": 22 }
+
+### Crea un ordine (201, stato "bozza").
+### Il client manda SOLO prodotto_id e quantita: nome, SKU, prezzo, IVA, totali e
+### numero_ordine li calcola il server. Nel terminale vedi la transazione completa.
+# @name nuovoOrdine
+POST {{baseUrl}}/ordini
+Content-Type: application/json
+
+{
+  "cliente_id": "{{nuovoCliente.response.body.id}}",
+  "indirizzo_spedizione_id": "{{indirizzoCasa.response.body.id}}",
+  "indirizzo_fatturazione_id": "{{indirizzoCasa.response.body.id}}",
+  "note": "Citofono Rossi, 2° piano",
+  "righe": [
+    { "prodotto_id": "{{prodPizza.response.body.id}}", "quantita": 2 },
+    { "prodotto_id": "{{prodBirra.response.body.id}}", "quantita": 3 }
+  ]
+}
+
+### Dettaglio con righe (snapshot), cliente e indirizzi
+GET {{baseUrl}}/ordini/{{nuovoOrdine.response.body.id}}
+
+### Elenco paginato, filtrabile per cliente e stato
+GET {{baseUrl}}/ordini?cliente_id={{nuovoCliente.response.body.id}}&stato=bozza&page=1&page_size=10
+
+### Snapshot: cambio il prezzo del prodotto...
+PATCH {{baseUrl}}/prodotti/{{prodPizza.response.body.id}}
+Content-Type: application/json
+
+{ "prezzo": 10.00 }
+
+### ...ma l'ordine già creato mantiene il prezzo di prima (9.50)
+GET {{baseUrl}}/ordini/{{nuovoOrdine.response.body.id}}
+
+### Modifica note/indirizzi (solo in bozza)
+PATCH {{baseUrl}}/ordini/{{nuovoOrdine.response.body.id}}
+Content-Type: application/json
+
+{ "note": "Consegna dopo le 19" }
+
+### Sostituisce tutte le righe (solo in bozza): nuovo snapshot (pizza a 10.00) e totale ricalcolato
+PUT {{baseUrl}}/ordini/{{nuovoOrdine.response.body.id}}/righe
+Content-Type: application/json
+
+{
+  "righe": [
+    { "prodotto_id": "{{prodPizza.response.body.id}}", "quantita": 1 },
+    { "prodotto_id": "{{prodBirra.response.body.id}}", "quantita": 1 }
+  ]
+}
+
+### Errore 400: il client prova a mandare prezzi e totale (campi non ammessi)
+POST {{baseUrl}}/ordini
+Content-Type: application/json
+
+{
+  "cliente_id": "{{nuovoCliente.response.body.id}}",
+  "totale": 0.01,
+  "righe": [{ "prodotto_id": "{{prodPizza.response.body.id}}", "quantita": 1, "prezzo_unitario": 0.01 }]
+}
+
+### Errore 400: nessuna riga
+POST {{baseUrl}}/ordini
+Content-Type: application/json
+
+{ "cliente_id": "{{nuovoCliente.response.body.id}}", "righe": [] }
+
+### Errore 400: prodotto ripetuto in due righe
+POST {{baseUrl}}/ordini
+Content-Type: application/json
+
+{
+  "cliente_id": "{{nuovoCliente.response.body.id}}",
+  "righe": [
+    { "prodotto_id": "{{prodPizza.response.body.id}}", "quantita": 1 },
+    { "prodotto_id": "{{prodPizza.response.body.id}}", "quantita": 2 }
+  ]
+}
+
+### Errore 400: prodotto inesistente
+POST {{baseUrl}}/ordini
+Content-Type: application/json
+
+{ "cliente_id": "{{nuovoCliente.response.body.id}}", "righe": [{ "prodotto_id": "999999", "quantita": 1 }] }
+
+### Errore 409: prodotto non attivo (l'acqua creata nella sezione PRODOTTI ha attivo = false)
+POST {{baseUrl}}/ordini
+Content-Type: application/json
+
+{
+  "cliente_id": "{{nuovoCliente.response.body.id}}",
+  "righe": [
+    { "prodotto_id": "{{prodBirra.response.body.id}}", "quantita": 1 },
+    { "prodotto_id": "{{prodottoNonAttivo.response.body.id}}", "quantita": 1 }
+  ]
+}
+
+### Errore 404: cliente inesistente
+POST {{baseUrl}}/ordini
+Content-Type: application/json
+
+{ "cliente_id": "999999", "righe": [{ "prodotto_id": "{{prodPizza.response.body.id}}", "quantita": 1 }] }
+
+### Errore 400: stato non valido nel filtro
+GET {{baseUrl}}/ordini?stato=pagato
+
+### Errore 404: ordine inesistente
+GET {{baseUrl}}/ordini/999999
+
+# ------------------------------------------------------------
+# CAMBI DI STATO: bozza -> confermato -> spedito -> consegnato;
+#                 bozza o confermato -> annullato
+# ------------------------------------------------------------
+
+### Errore 409: bozza -> spedito non è ammesso (salta "confermato")
+PATCH {{baseUrl}}/ordini/{{nuovoOrdine.response.body.id}}/stato
+Content-Type: application/json
+
+{ "stato": "spedito" }
+
+### bozza -> confermato (200)
+PATCH {{baseUrl}}/ordini/{{nuovoOrdine.response.body.id}}/stato
+Content-Type: application/json
+
+{ "stato": "confermato" }
+
+### Errore 409: le righe si modificano solo in bozza
+PUT {{baseUrl}}/ordini/{{nuovoOrdine.response.body.id}}/righe
+Content-Type: application/json
+
+{ "righe": [{ "prodotto_id": "{{prodPizza.response.body.id}}", "quantita": 10 }] }
+
+### confermato -> spedito (200)
+PATCH {{baseUrl}}/ordini/{{nuovoOrdine.response.body.id}}/stato
+Content-Type: application/json
+
+{ "stato": "spedito" }
+
+### Errore 409: spedito -> annullato non è ammesso
+PATCH {{baseUrl}}/ordini/{{nuovoOrdine.response.body.id}}/stato
+Content-Type: application/json
+
+{ "stato": "annullato" }
+
+### spedito -> consegnato (200)
+PATCH {{baseUrl}}/ordini/{{nuovoOrdine.response.body.id}}/stato
+Content-Type: application/json
+
+{ "stato": "consegnato" }
+
+### Errore 409: prodotto presente in un ordine (FK riga_ordine.prodotto_id ON DELETE RESTRICT)
+DELETE {{baseUrl}}/prodotti/{{prodPizza.response.body.id}}
+
+### Errore 409: cliente con ordini (FK ordine.cliente_id ON DELETE RESTRICT)
+DELETE {{baseUrl}}/clienti/{{nuovoCliente.response.body.id}}
+
+### Errore 409: indirizzo usato in un ordine (FK ordine.indirizzo_spedizione_id ON DELETE RESTRICT)
+DELETE {{baseUrl}}/clienti/{{nuovoCliente.response.body.id}}/indirizzi/{{indirizzoCasa.response.body.id}}

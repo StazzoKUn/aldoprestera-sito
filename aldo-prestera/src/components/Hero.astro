@@ -1,0 +1,142 @@
+---
+import { Picture } from 'astro:assets';
+import hero from '../assets/hero-aldo.png';
+import { site } from '../data/site';
+---
+
+<section class="hero" aria-labelledby="hero-title">
+  <div class="text">
+    <div class="eyebrow">
+      <span class="desk">Pizzeria · Asporto e consegna</span><span class="mob">Asporto e consegna</span>
+    </div>
+    <h1 id="hero-title">Ordina la pizza online.</h1>
+    <p>
+      <span class="desk">Scegli dal menù e l'orario. Te la portiamo a casa o passi a ritirarla. Paghi alla consegna.</span>
+      <span class="mob">A domicilio o da asporto. Paghi alla consegna.</span>
+    </p>
+    <div class="ctas">
+      <a href="/ordina" class="btn btn--red">Ordina online</a>
+      <a href="#menu" class="btn btn--outline desk">Guarda il menù</a>
+      <a href={site.phoneHref} class="btn btn--outline mob">Chiama {site.phone}</a>
+    </div>
+    <div class="info desk">
+      <span>{site.hours.short}</span><a href={site.phoneHref}>Tel. {site.phone}</a>
+    </div>
+  </div>
+  <Picture
+    src={hero}
+    alt="Aldo Prestera al banco, in una nuvola di farina"
+    widths={[390, 640, 930]}
+    sizes="(max-width: 860px) 100vw, 50vw"
+    formats={['avif', 'webp']}
+    loading="eager"
+    fetchpriority="high"
+    pictureAttributes={{ class: 'photo' }}
+  />
+</section>
+
+<style>
+  .hero {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: 620px;
+  }
+  .text {
+    padding: 96px var(--gutter) 80px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 28px;
+    background: radial-gradient(120% 90% at 0% 0%, var(--ink-2) 0%, var(--ink) 60%);
+  }
+  h1 {
+    font-size: clamp(48px, 6.9vw, 88px);
+    line-height: 0.98;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  p {
+    margin: 0;
+    max-width: 440px;
+    font-size: 18px;
+    line-height: 1.6;
+    font-weight: 300;
+    color: var(--on-dark-muted);
+    text-wrap: pretty;
+  }
+  .ctas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-top: 8px;
+  }
+  .info {
+    display: flex;
+    gap: 36px;
+    margin-top: 28px;
+    font-size: 14px;
+    color: var(--on-dark-muted-3);
+  }
+  .info a:hover {
+    color: var(--red-hover);
+  }
+  .hero :global(.photo) {
+    display: block;
+    position: relative;
+    min-width: 0;
+  }
+  .hero :global(.photo img) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 30%;
+  }
+  .mob {
+    display: none;
+  }
+
+  @media (max-width: 860px) {
+    .hero {
+      grid-template-columns: 1fr;
+      min-height: 0;
+    }
+    .hero :global(.photo) {
+      order: -1;
+      aspect-ratio: 1 / 1;
+    }
+    .text {
+      padding: 32px 24px 36px;
+      gap: 18px;
+      background: none;
+    }
+    .eyebrow {
+      font-size: 11px;
+      letter-spacing: 0.38em;
+    }
+    h1 {
+      line-height: 1;
+    }
+    p {
+      font-size: 16px;
+    }
+    .ctas {
+      flex-direction: column;
+      gap: 14px;
+      margin-top: 6px;
+    }
+    .ctas .btn {
+      padding: 18px;
+    }
+    .desk {
+      display: none;
+    }
+    .mob {
+      display: inline;
+    }
+    .ctas .mob {
+      display: inline-flex;
+    }
+  }
+</style>

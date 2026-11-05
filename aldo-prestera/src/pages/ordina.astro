@@ -1,0 +1,40 @@
+---
+import { getImage } from 'astro:assets';
+import Layout from '../layouts/Layout.astro';
+import OrderApp, { type ItemImage } from '../components/order/OrderApp';
+import { menu, allItems } from '../data/menu';
+import { site } from '../data/site';
+import { menuImage } from '../lib/images';
+import logoChiaro from '../assets/logo-chiaro.png';
+import '../styles/ordina.css';
+
+// Immagini ottimizzate passate all'isola (che non può usare <Image>)
+const images: Record<string, ItemImage> = {};
+for (const it of allItems) {
+  const src = menuImage(it.img);
+  if (!src) continue;
+  const [sm, lg, thumb] = await Promise.all([
+    getImage({ src, width: 480, format: 'webp' }),
+    getImage({ src, width: 800, format: 'webp' }),
+    getImage({ src, width: 96, height: 96, format: 'webp' }),
+  ]);
+  images[it.id] = { src: lg.src, srcset: `${sm.src} 480w, ${lg.src} 800w`, thumb: thumb.src };
+}
+const [logo1, logo2, logoLg] = await Promise.all([
+  getImage({ src: logoChiaro, height: 52, format: 'png' }),
+  getImage({ src: logoChiaro, height: 104, format: 'png' }),
+  getImage({ src: logoChiaro, width: 440, format: 'png' }),
+]);
+const logo = { src: logo1.src, srcset: `${logo1.src} 1x, ${logo2.src} 2x`, large: logoLg.src };
+---
+
+<Layout title={`Ordina online · ${site.name}`} bg="paper">
+  <OrderApp
+    client:load
+    menu={menu}
+    images={images}
+    logo={logo}
+    phone={site.phone}
+    phoneHref={site.phoneHref}
+  />
+</Layout>

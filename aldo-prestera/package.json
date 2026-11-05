@@ -1,0 +1,27 @@
+{
+  "name": "aldo-prestera",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro check && astro build",
+    "preview": "astro preview",
+    "start": "node ./dist/server/entry.mjs",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/node": "^11.1.9",
+    "@astrojs/preact": "^6.0.6",
+    "@fontsource/cormorant-garamond": "^5.3.0",
+    "@fontsource/jost": "^5.3.0",
+    "astro": "^7.3.8",
+    "nodemailer": "^10.2.1",
+    "preact": "^10.29.8"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.12",
+    "@types/nodemailer": "^8.0.2",
+    "typescript": "^6.0.3"
+  }
+}

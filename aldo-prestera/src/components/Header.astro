@@ -1,0 +1,166 @@
+---
+import { Image } from 'astro:assets';
+import logo from '../assets/logo-chiaro.png';
+
+const links = [
+  { href: '/#menu', label: 'Menù' },
+  { href: '/#come-funziona', label: 'La pizzeria' },
+  { href: '/#orari', label: 'Orari' },
+  { href: '/#contatti', label: 'Contatti' },
+];
+---
+
+<header class="header">
+  <a href="/" class="logo" aria-label="Aldo Prestera Pizzeria, torna all'inizio">
+    <Image src={logo} alt="Aldo Prestera Pizzeria" height={56} densities={[1, 2]} loading="eager" />
+  </a>
+
+  <nav class="nav" aria-label="Principale">
+    {links.map((l) => <a href={l.href}>{l.label}</a>)}
+    <a href="/ordina" class="cta">Ordina ora</a>
+  </nav>
+
+  <button class="burger" type="button" aria-expanded="false" aria-controls="menu-mobile" aria-label="Apri il menù">
+    <span></span><span></span><span></span>
+  </button>
+
+  <div class="drawer" id="menu-mobile" hidden>
+    <nav aria-label="Principale (mobile)">
+      {links.map((l) => <a href={l.href}>{l.label}</a>)}
+      <a href="/ordina" class="btn btn--red">Ordina ora</a>
+    </nav>
+  </div>
+</header>
+
+<script>
+  const burger = document.querySelector<HTMLButtonElement>('.burger')!;
+  const drawer = document.getElementById('menu-mobile')!;
+  const setOpen = (open: boolean) => {
+    burger.setAttribute('aria-expanded', String(open));
+    burger.setAttribute('aria-label', open ? 'Chiudi il menù' : 'Apri il menù');
+    drawer.hidden = !open;
+    document.body.style.overflow = open ? 'hidden' : '';
+  };
+  burger.addEventListener('click', () => setOpen(drawer.hidden === true));
+  drawer.addEventListener('click', (e) => {
+    if ((e.target as HTMLElement).closest('a')) setOpen(false);
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !drawer.hidden) setOpen(false);
+  });
+</script>
+
+<style>
+  .header {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 22px var(--gutter);
+    border-bottom: 1px solid var(--line-dark);
+  }
+  .logo {
+    position: relative;
+    z-index: 21;
+  }
+  .logo img {
+    height: 56px;
+    width: auto;
+    mix-blend-mode: screen;
+  }
+  .nav {
+    display: flex;
+    align-items: center;
+    gap: 40px;
+    font-size: 13px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--on-dark-muted);
+  }
+  .nav a:not(.cta):hover {
+    color: var(--red-hover);
+  }
+  .cta {
+    background: var(--red);
+    color: #fff;
+    padding: 13px 26px;
+    border-radius: 2px;
+    letter-spacing: 0.18em;
+    font-weight: 500;
+  }
+  .cta:hover {
+    background: #a01f26;
+  }
+
+  .burger {
+    display: none;
+    flex-direction: column;
+    gap: 5px;
+    padding: 10px;
+    min-width: 44px;
+    min-height: 44px;
+    justify-content: center;
+    position: relative;
+    z-index: 21;
+  }
+  .burger span {
+    display: block;
+    width: 22px;
+    height: 1px;
+    background: var(--on-dark);
+    transition: transform 0.2s, opacity 0.2s, width 0.2s;
+  }
+  .burger span:last-child {
+    width: 14px;
+  }
+  .burger[aria-expanded='true'] span:nth-child(1) {
+    transform: translateY(6px) rotate(45deg);
+  }
+  .burger[aria-expanded='true'] span:nth-child(2) {
+    opacity: 0;
+  }
+  .burger[aria-expanded='true'] span:nth-child(3) {
+    width: 22px;
+    transform: translateY(-6px) rotate(-45deg);
+  }
+
+  .drawer {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    background: var(--ink);
+    padding: 96px 24px 32px;
+  }
+  .drawer nav {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .drawer a:not(.btn) {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 40px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--line-dark);
+  }
+  .drawer .btn {
+    margin-top: 28px;
+  }
+
+  @media (max-width: 860px) {
+    .header {
+      padding: 16px 20px;
+      border-bottom: 0;
+    }
+    .logo img {
+      height: 44px;
+      mix-blend-mode: normal;
+    }
+    .nav {
+      display: none;
+    }
+    .burger {
+      display: flex;
+    }
+  }
+</style>

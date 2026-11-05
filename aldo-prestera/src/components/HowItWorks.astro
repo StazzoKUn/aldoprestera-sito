@@ -1,0 +1,106 @@
+---
+const steps = [
+  { n: '01', title: 'Scegli le pizze', text: 'Aggiungi al carrello quello che vuoi.' },
+  { n: '02', title: 'Ritiro o consegna', text: "Scegli l'orario. Per la consegna, lascia l'indirizzo." },
+  { n: '03', title: 'Paghi alla consegna', text: 'Contanti o carta. Ti chiamiamo per confermare.' },
+];
+---
+
+<section class="how" id="come-funziona" aria-labelledby="how-title">
+  <div class="titles">
+    <div class="eyebrow">Ordini online</div>
+    <h2 id="how-title">Come funziona</h2>
+  </div>
+  <ol class="steps">
+    {
+      steps.map((s) => (
+        <li>
+          <span class="n" aria-hidden="true">{s.n}</span>
+          <span class="t">{s.title}</span>
+          <span class="d">{s.text}</span>
+        </li>
+      ))
+    }
+  </ol>
+</section>
+
+<style>
+  .how {
+    padding: 88px var(--gutter);
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 64px;
+    border-bottom: 1px solid var(--line-dark);
+  }
+  .titles {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  h2 {
+    font-size: 56px;
+    line-height: 1;
+  }
+  .steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 40px;
+  }
+  li {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    border-top: 1px solid var(--red);
+    padding-top: 24px;
+  }
+  .n {
+    font-family: var(--serif);
+    font-size: 44px;
+    color: var(--red-on-dark);
+    line-height: 1.1;
+  }
+  .t {
+    font-size: 20px;
+    font-weight: 500;
+  }
+  .d {
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--on-dark-muted-2);
+    font-weight: 300;
+  }
+
+  @media (max-width: 1080px) {
+    .how {
+      grid-template-columns: 1fr;
+      gap: 40px;
+    }
+  }
+  @media (max-width: 860px) {
+    .how {
+      padding: 48px 24px;
+      gap: 28px;
+    }
+    .eyebrow {
+      font-size: 11px;
+      letter-spacing: 0.38em;
+    }
+    h2 {
+      font-size: 38px;
+    }
+    .steps {
+      grid-template-columns: 1fr;
+      gap: 28px;
+    }
+    li {
+      gap: 8px;
+      padding-top: 18px;
+    }
+    .n {
+      font-size: 36px;
+    }
+  }
+</style>

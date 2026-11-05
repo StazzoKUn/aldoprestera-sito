@@ -1,0 +1,182 @@
+---
+import { site, directionsHref } from '../data/site';
+
+const { lat, lon } = site.map;
+const d = 0.006;
+const bbox = [lon - d * 1.6, lat - d, lon + d * 1.6, lat + d].map((n) => n.toFixed(5)).join(',');
+const mapSrc = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik`;
+---
+
+<section class="where" id="contatti" aria-labelledby="where-title">
+  <div class="info">
+    <h2 id="where-title">Dove siamo</h2>
+    <div class="cols">
+      <div>
+        <span class="label">Indirizzo</span>
+        <address>
+          <span>{site.address.street}</span><span>{site.address.city}</span>
+        </address>
+      </div>
+      <div id="orari">
+        <span class="label">Orari</span>
+        <span>{site.hours.long}</span><span>{site.hours.closed}</span>
+      </div>
+      <div>
+        <span class="label">Telefono</span>
+        <a href={site.phoneHref}>{site.phone}</a>
+      </div>
+      <div>
+        <span class="label">Seguici</span>
+        <span>
+          {
+            site.social.map((s, i) => (
+              <>
+                {i > 0 && ' · '}
+                <a href={s.href} target="_blank" rel="noopener">
+                  {s.name}
+                </a>
+              </>
+            ))
+          }
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <div class="map">
+    <iframe src={mapSrc} title={`Mappa: ${site.name}`} loading="lazy" referrerpolicy="no-referrer" tabindex="-1"
+    ></iframe>
+    <div class="pin" aria-hidden="true">
+      <div class="tag">{site.name}</div>
+      <div class="dot"></div>
+    </div>
+    <a class="go" href={directionsHref} target="_blank" rel="noopener">Indicazioni</a>
+  </div>
+</section>
+
+<style>
+  .where {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    scroll-margin-top: 0;
+  }
+  .info {
+    padding: 72px var(--gutter);
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+  h2 {
+    font-size: 48px;
+    line-height: 1;
+  }
+  .cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--on-dark-muted);
+    font-weight: 300;
+  }
+  .cols > div,
+  address {
+    display: flex;
+    flex-direction: column;
+    font-style: normal;
+  }
+  #orari {
+    scroll-margin-top: 24px;
+  }
+  .cols a:hover {
+    color: var(--red-hover);
+  }
+  .label {
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--red-on-dark);
+    font-weight: 500;
+    margin-bottom: 6px;
+  }
+
+  .map {
+    position: relative;
+    overflow: hidden;
+    min-height: 380px;
+    background: #1c1a18;
+  }
+  iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    filter: grayscale(1) invert(0.9) contrast(0.85) brightness(0.8);
+    pointer-events: none;
+  }
+  .pin {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, calc(-100% + 9px));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    pointer-events: none;
+  }
+  .tag {
+    background: var(--paper);
+    color: var(--text);
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  }
+  .dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--red);
+    border: 3px solid var(--paper);
+    box-shadow: 0 0 0 10px rgba(184, 38, 45, 0.25);
+  }
+  .go {
+    position: absolute;
+    right: 20px;
+    bottom: 20px;
+    background: var(--paper);
+    color: var(--text);
+    padding: 13px 16px;
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+  .go:hover {
+    background: #fff;
+  }
+
+  @media (max-width: 860px) {
+    .where {
+      grid-template-columns: 1fr;
+    }
+    .info {
+      padding: 48px 24px 32px;
+      gap: 24px;
+    }
+    h2 {
+      font-size: 38px;
+    }
+    .cols {
+      grid-template-columns: 1fr;
+      gap: 18px;
+      line-height: 1.6;
+    }
+    .map {
+      min-height: 300px;
+    }
+  }
+</style>

@@ -1,0 +1,137 @@
+// Schema Prisma del backend ordini.
+// La connessione (URL) è in prisma.config.ts per la CLI e in src/db/prisma.ts per l'app.
+//
+// Convenzioni:
+// - i campi hanno ESATTAMENTE il nome della colonna (snake_case): lo stesso nome
+//   si ritrova nel codice TypeScript, nel JSON delle API e in phpMyAdmin;
+// - i modelli sono in PascalCase (Cliente) e @@map li collega alla tabella (cliente);
+// - i tipi SQL sono espliciti con @db.* (VARCHAR(n), CHAR(2), DECIMAL(10,2), DATETIME(3));
+// - ogni relazione dichiara onDelete/onUpdate: la spiegazione è nel README.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+// Diventa una colonna ENUM('bozza','confermato',...) nella tabella ordine.
+enum StatoOrdine {
+  bozza
+  confermato
+  spedito
+  consegnato
+  annullato
+}
+
+model Cliente {
+  id                 BigInt   @id @default(autoincrement())
+  email              String   @unique @db.VarChar(255)
+  nome               String   @db.VarChar(100)
+  cognome            String   @db.VarChar(100)
+  telefono           String?  @db.VarChar(32)
+  codice_fiscale     String?  @db.VarChar(16)
+  partita_iva        String?  @db.VarChar(16)
+  stripe_customer_id String?  @unique @db.VarChar(255)
+  creato_il          DateTime @default(now()) @db.DateTime(3)
+  aggiornato_il      DateTime @updatedAt @db.DateTime(3)
+
+  indirizzi Indirizzo[]
+  ordini    Ordine[]
+
+  @@map("cliente")
+}
+
+model Indirizzo {
+  id           BigInt  @id @default(autoincrement())
+  cliente_id   BigInt
+  destinatario String  @db.VarChar(150)
+  via          String  @db.VarChar(255)
+  cap          String  @db.VarChar(16)
+  citta        String  @db.VarChar(100)
+  provincia    String  @db.VarChar(64)
+  nazione      String  @db.Char(2) // ISO 3166-1 alpha-2, es. IT
+  predefinito  Boolean @default(false)
+
+  // Se si elimina il cliente, i suoi indirizzi vengono eliminati con lui.
+  cliente Cliente @relation(fields: [cliente_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  ordini_spedizione   Ordine[] @relation("IndirizzoSpedizione")
+  ordini_fatturazione Ordine[] @relation("IndirizzoFatturazione")
+
+  @@index([cliente_id])
+  @@map("indirizzo")
+}
+
+model Prodotto {
+  id           BigInt   @id @default(autoincrement())
+  sku          String   @unique @db.VarChar(64)
+  nome         String   @db.VarChar(200)
+  descrizione  String?  @db.Text
+  prezzo       Decimal  @db.Decimal(10, 2) // IVA inclusa
+  valuta       String   @default("EUR") @db.Char(3) // ISO 4217
+  aliquota_iva Decimal  @db.Decimal(5, 2) // es. 22.00
+  attivo       Boolean  @default(true)
+  creato_il    DateTime @default(now()) @db.DateTime(3)
+
+  righe RigaOrdine[]
+
+  @@index([attivo])
+  @@map("prodotto")
+}
+
+model Ordine {
+  id                        BigInt      @id @default(autoincrement())
+  numero_ordine             String      @unique @db.VarChar(20)
+  cliente_id                BigInt
+  indirizzo_spedizione_id   BigInt?
+  indirizzo_fatturazione_id BigInt?
+  stato                     StatoOrdine @default(bozza)
+  totale                    Decimal     @default(0) @db.Decimal(10, 2)
+  valuta                    String      @default("EUR") @db.Char(3)
+  note                      String?     @db.Text
+  creato_il                 DateTime    @default(now()) @db.DateTime(3)
+  aggiornato_il             DateTime    @updatedAt @db.DateTime(3)
+
+  // Un cliente con ordini non si può eliminare: lo storico ordini va conservato.
+  cliente Cliente @relation(fields: [cliente_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  // Un indirizzo usato da un ordine non si può eliminare (né direttamente,
+  // né tramite il CASCADE dal cliente).
+  indirizzo_spedizione   Indirizzo? @relation("IndirizzoSpedizione", fields: [indirizzo_spedizione_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  indirizzo_fatturazione Indirizzo? @relation("IndirizzoFatturazione", fields: [indirizzo_fatturazione_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  righe RigaOrdine[]
+
+  // Copre il filtro "ordini di un cliente in un certo stato" e fa anche
+  // da indice per la foreign key cliente_id (colonna più a sinistra).
+  @@index([cliente_id, stato])
+  @@index([stato])
+  @@index([indirizzo_spedizione_id])
+  @@index([indirizzo_fatturazione_id])
+  @@map("ordine")
+}
+
+model RigaOrdine {
+  id              BigInt  @id @default(autoincrement())
+  ordine_id       BigInt
+  prodotto_id     BigInt
+  nome_prodotto   String  @db.VarChar(200) // snapshot
+  sku             String  @db.VarChar(64) // snapshot
+  quantita        Int
+  prezzo_unitario Decimal @db.Decimal(10, 2) // snapshot, IVA inclusa
+  aliquota_iva    Decimal @db.Decimal(5, 2) // snapshot
+  totale_riga     Decimal @db.Decimal(10, 2)
+
+  // Le righe sono parte dell'ordine: se l'ordine sparisce, spariscono anche loro.
+  ordine Ordine @relation(fields: [ordine_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  // Un prodotto presente in un ordine non si può eliminare: si disattiva (attivo = false).
+  prodotto Prodotto @relation(fields: [prodotto_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([ordine_id])
+  @@index([prodotto_id])
+  @@map("riga_ordine")
+}

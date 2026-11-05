@@ -1,0 +1,49 @@
+---
+import { getImage } from 'astro:assets';
+import '../styles/global.css';
+import logo from '../assets/logo-aldo-prestera.png';
+import { site } from '../data/site';
+
+interface Props {
+  title?: string;
+  description?: string;
+  /** Colore di sfondo della pagina */
+  bg?: 'ink' | 'paper';
+}
+
+const {
+  title = `${site.name} · Ordina la pizza online`,
+  description = 'Pizzeria con asporto e consegna a domicilio. Scegli dal menù e l’orario, paghi alla consegna.',
+  bg = 'ink',
+} = Astro.props;
+
+const favicon = await getImage({ src: logo, width: 64, format: 'png' });
+const canonical = new URL(Astro.url.pathname, Astro.site);
+---
+
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" type="image/png" href={favicon.src} />
+    <meta name="theme-color" content="#141312" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:locale" content="it_IT" />
+  </head>
+  <body class:list={[bg === 'paper' && 'bg-paper']}>
+    <slot />
+  </body>
+</html>
+
+<style is:global>
+  body.bg-paper {
+    background: var(--paper);
+    color: var(--text);
+  }
+</style>

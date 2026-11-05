@@ -1,0 +1,187 @@
+---
+import { Image } from 'astro:assets';
+import { featured } from '../data/menu';
+import { eur } from '../lib/format';
+import { menuImage } from '../lib/images';
+---
+
+<section class="featured" id="menu" aria-labelledby="menu-title">
+  <div class="head">
+    <div class="titles">
+      <div class="eyebrow eyebrow--light">Dal menù</div>
+      <h2 id="menu-title">Le nostre pizze</h2>
+    </div>
+    <a href="/ordina" class="all">Menù completo</a>
+  </div>
+
+  <ul class="grid">
+    {
+      featured.map((p) => {
+        const img = menuImage(p.img);
+        return (
+          <li class="pizza">
+            {img && (
+              <Image
+                src={img}
+                alt={`Pizza ${p.name}`}
+                widths={[144, 400, 800]}
+                sizes="(max-width: 860px) 72px, 33vw"
+                class="img"
+              />
+            )}
+            <div class="body">
+              <div class="row">
+                <h3>{p.name}</h3>
+                <span class="price">{eur(p.price)}</span>
+              </div>
+              <p>{p.desc}</p>
+            </div>
+          </li>
+        );
+      })
+    }
+  </ul>
+  <a href="/ordina" class="all all--mob">Menù completo</a>
+</section>
+
+<style>
+  .featured {
+    background: var(--paper);
+    color: var(--text);
+    padding: 88px var(--gutter);
+    scroll-margin-top: 0;
+  }
+  .head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 48px;
+  }
+  .titles {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  h2 {
+    font-size: 60px;
+    line-height: 1;
+  }
+  .all {
+    font-size: 13px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--text);
+    padding-bottom: 4px;
+  }
+  .all:hover {
+    color: var(--red);
+    border-color: var(--red);
+  }
+  .all--mob {
+    display: none;
+  }
+  .grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 32px;
+  }
+  .pizza {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .pizza :global(.img) {
+    aspect-ratio: 4 / 3;
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+  }
+  .body {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+  }
+  h3 {
+    font-style: normal;
+    font-size: 32px;
+    font-weight: 600;
+  }
+  .price {
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--red);
+    white-space: nowrap;
+  }
+  p {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--muted-2);
+    font-weight: 300;
+  }
+
+  @media (max-width: 860px) {
+    .featured {
+      padding: 36px 24px;
+    }
+    .head {
+      margin-bottom: 22px;
+    }
+    .head .eyebrow,
+    .head .all {
+      display: none;
+    }
+    h2 {
+      font-size: 38px;
+    }
+    .grid {
+      grid-template-columns: 1fr;
+      gap: 18px;
+    }
+    .pizza {
+      flex-direction: row;
+      align-items: center;
+      gap: 14px;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+    .pizza :global(.img) {
+      width: 72px;
+      height: 72px;
+      flex: none;
+      aspect-ratio: 1;
+    }
+    .body {
+      flex: 1;
+      gap: 4px;
+      min-width: 0;
+    }
+    .row {
+      gap: 8px;
+    }
+    h3 {
+      font-size: 24px;
+    }
+    .price {
+      font-size: 15px;
+    }
+    p {
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .all--mob {
+      display: inline-block;
+      align-self: flex-start;
+      margin-top: 26px;
+    }
+  }
+</style>

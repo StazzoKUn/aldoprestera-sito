@@ -1,0 +1,151 @@
+@import '@fontsource/cormorant-garamond/500.css';
+@import '@fontsource/cormorant-garamond/600.css';
+@import '@fontsource/cormorant-garamond/500-italic.css';
+@import '@fontsource/cormorant-garamond/600-italic.css';
+@import '@fontsource/jost/300.css';
+@import '@fontsource/jost/400.css';
+@import '@fontsource/jost/500.css';
+@import '@fontsource/jost/600.css';
+
+:root {
+  --ink: #141312;
+  --ink-2: #1f1d1b;
+  --ink-3: #26231f;
+  --paper: #f2efe9;
+  --white: #fff;
+
+  --text: #1a1817;
+  --muted: #6b665f;
+  --muted-2: #5f5a54;
+  --border: #dcd7cf;
+  --border-2: #cfc9c0;
+  --border-input: #d6d1c9;
+  --segment: #e4e0d9;
+  --placeholder: #9a948c;
+
+  --on-dark: #f2efe9;
+  --on-dark-muted: #bdb8b0;
+  --on-dark-muted-2: #a39e97;
+  --on-dark-muted-3: #8e8983;
+  --on-dark-muted-4: #6e6963;
+  --line-dark: rgba(242, 239, 233, 0.08);
+  --line-dark-2: rgba(242, 239, 233, 0.12);
+
+  --red: #b8262d;
+  --red-on-dark: #d0443f;
+  --red-hover: #e05252;
+
+  --serif: 'Cormorant Garamond', Georgia, serif;
+  --sans: 'Jost', system-ui, sans-serif;
+
+  --gutter: 56px;
+}
+
+@media (max-width: 860px) {
+  :root {
+    --gutter: 24px;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+  background: var(--ink);
+  color: var(--on-dark);
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 500;
+}
+
+:focus-visible {
+  outline: 2px solid var(--red-on-dark);
+  outline-offset: 3px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Etichetta maiuscola rossa sopra i titoli */
+.eyebrow {
+  font-size: 12px;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: var(--red-on-dark);
+}
+.eyebrow--light {
+  color: var(--red);
+}
+
+/* Bottoni della landing (radius 2px) */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 18px 34px;
+  font-size: 14px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  border-radius: 2px;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+.btn--red {
+  background: var(--red);
+  color: #fff;
+  font-weight: 500;
+}
+.btn--red:hover {
+  background: #a01f26;
+}
+.btn--outline {
+  border: 1px solid rgba(242, 239, 233, 0.3);
+}
+.btn--outline:hover {
+  border-color: rgba(242, 239, 233, 0.7);
+}

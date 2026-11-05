@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><meta name="design_doc_mode" content="canvas"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet"><style>body{margin:0;background:#e8e5e0;font-family:'Jost',system-ui,sans-serif;-webkit-font-smoothing:antialiased}a{color:#c23a3a;text-decoration:none}a:hover{color:#e05252}.dv-turn{padding:48px 52px 40px;border-bottom:1px solid rgba(0,0,0,.08)}.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 24px}.dv-tid{font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:#1a1a1a;color:#fff;border-radius:4px}.dv-tname{font:600 14px/1.2 'Jost',sans-serif;color:#1a1a1a}.dv-opts{display:flex;flex-wrap:wrap;gap:36px;align-items:flex-start}.dv-opt{flex:none;display:flex;flex-direction:column;gap:10px}.dv-oid{font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:rgba(0,0,0,.08);color:#1a1a1a;border-radius:5px}.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 12px/1.3 'Jost',sans-serif;color:rgba(0,0,0,.6)}.dv-card{background:#141312;border-radius:10px;box-shadow:0 2px 6px rgba(0,0,0,.08),0 20px 50px rgba(0,0,0,.12);overflow:hidden}.dv-next{margin:26px 0 0;font:13px/1.5 'Jost',sans-serif;color:rgba(0,0,0,.55)}</style></helmet>
+<section class="dv-turn" id="t2">
+<div class="dv-thd"><a class="dv-tid" href="#t2">2</a><span class="dv-tname">Ordinazione ridisegnata con le foto delle pizze (sostituisce <a class="dv-oid" href="#1c">1c</a> e <a class="dv-oid" href="#1d">1d</a>) · logo scontornato</span></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="2a"><div class="dv-olabel"><a class="dv-oid" href="#2a">2a</a>Ordina online · desktop (interattivo)</div>
+<div class="dv-card" style="width:1280px;background:#f2efe9;color:#1a1817">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 56px;background:#141312;color:#bdb8b0">
+    <img src="assets/logo-chiaro.png" alt="Aldo Prestera Pizzeria" style="height:52px;width:auto;display:block"></img>
+    <div style="display:flex;align-items:center;gap:12px;font-size:12px;letter-spacing:.22em;text-transform:uppercase">
+      <span style="color:#f2efe9;border-bottom:1px solid #b8262d;padding-bottom:4px">1 Menù</span><span style="color:#5f5a54">—</span><span>2 Dati</span><span style="color:#5f5a54">—</span><span>3 Conferma</span>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:40px;padding:44px 56px 56px;align-items:start">
+    <div style="display:flex;flex-direction:column;gap:36px;min-width:0">
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:24px">
+        <div style="display:flex;flex-direction:column;gap:10px">
+                    <h1 style="margin:0;font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:500;font-size:64px;line-height:.95">Menù</h1>
+        </div>
+        <div style="display:flex;background:#e4e0d9;padding:4px;font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:500;border-radius:40px">
+          <span onClick="{{ setConsegna }}" style="padding:12px 24px;cursor:pointer;border-radius:40px;background:{{ modeA.bg }};color:{{ modeA.fg }}">Consegna</span>
+          <span onClick="{{ setAsporto }}" style="padding:12px 24px;cursor:pointer;border-radius:40px;background:{{ modeB.bg }};color:{{ modeB.fg }}">Ritiro</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;font-size:13px;letter-spacing:.12em;text-transform:uppercase;font-weight:500">
+        <span style="padding:10px 20px;border-radius:40px;background:#b8262d;color:#fff">Le speciali</span>
+        <span style="padding:10px 20px;border-radius:40px;border:1px solid #cfc9c0">Le classiche</span>
+        <span style="padding:10px 20px;border-radius:40px;border:1px solid #cfc9c0">Bevande</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px">
+        <sc-for list="{{ specials }}" as="it" hint-placeholder-count="4">
+          <div style="background:#fff;display:flex;flex-direction:column;box-shadow:0 1px 2px rgba(26,24,23,.06)">
+            <div style="position:relative">
+              <img src="{{ it.img }}" alt="{{ it.name }}" style="width:100%;aspect-ratio:5/4;object-fit:cover;display:block"></img>
+              <span style="position:absolute;top:16px;left:16px;background:#141312;color:#f2efe9;padding:8px 14px;font-size:16px;font-weight:500">{{ it.priceTxt }}</span>
+              <div style="position:absolute;right:16px;bottom:16px">
+                <sc-if value="{{ it.none }}" hint-placeholder-val="{{ true }}"><span onClick="{{ it.add }}" style="cursor:pointer;height:52px;padding:0 22px;border-radius:40px;background:#b8262d;color:#fff;display:flex;align-items:center;gap:10px;font-size:13px;letter-spacing:.16em;text-transform:uppercase;font-weight:500;box-shadow:0 6px 18px rgba(0,0,0,.25)"><span style="font-size:22px;line-height:1">+</span>Aggiungi</span></sc-if>
+                <sc-if value="{{ it.some }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;height:52px;border-radius:40px;background:#141312;color:#fff;box-shadow:0 6px 18px rgba(0,0,0,.25);overflow:hidden"><span onClick="{{ it.sub }}" style="cursor:pointer;width:52px;height:52px;display:flex;align-items:center;justify-content:center;font-size:20px">−</span><span style="width:28px;text-align:center;font-size:17px;font-weight:600">{{ it.qty }}</span><span onClick="{{ it.add }}" style="cursor:pointer;width:52px;height:52px;display:flex;align-items:center;justify-content:center;font-size:20px;background:#b8262d">+</span></div></sc-if>
+              </div>
+            </div>
+            <div style="padding:20px 22px 24px;display:flex;flex-direction:column;gap:6px">
+              <span style="font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:600;line-height:1.05">{{ it.name }}</span>
+              <span style="font-size:15px;color:#6b665f;font-weight:300;line-height:1.45">{{ it.desc }}</span>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <span style="font-size:12px;letter-spacing:.4em;text-transform:uppercase;color:#b8262d;font-weight:500;padding-bottom:10px">Le classiche</span>
+        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:28px">
+          <sc-for list="{{ classics }}" as="it" hint-placeholder-count="4">
+            <div style="display:flex;align-items:center;gap:14px;padding:16px 0;border-top:1px solid #dcd7cf">
+              <div style="flex:1;display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:600">{{ it.name }}</span><span style="font-size:13px;color:#6b665f;font-weight:300">{{ it.desc }}</span></div>
+              <span style="font-size:16px;font-weight:500">{{ it.priceTxt }}</span>
+              <sc-if value="{{ it.none }}" hint-placeholder-val="{{ true }}"><span onClick="{{ it.add }}" style="cursor:pointer;width:40px;height:40px;border-radius:50%;border:1px solid #1a1817;display:flex;align-items:center;justify-content:center;font-size:20px">+</span></sc-if>
+              <sc-if value="{{ it.some }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;border-radius:40px;background:#141312;color:#fff;overflow:hidden"><span onClick="{{ it.sub }}" style="cursor:pointer;width:36px;height:40px;display:flex;align-items:center;justify-content:center">−</span><span style="width:18px;text-align:center;font-weight:600">{{ it.qty }}</span><span onClick="{{ it.add }}" style="cursor:pointer;width:36px;height:40px;display:flex;align-items:center;justify-content:center;background:#b8262d">+</span></div></sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+    <div style="position:sticky;top:24px;background:#141312;color:#f2efe9;display:flex;flex-direction:column">
+      <div style="padding:28px 28px 20px;display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid rgba(242,239,233,.1)"><span style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:34px">Il tuo ordine</span><span style="font-size:13px;color:#8e8983">{{ countTxt }}</span></div>
+      <div style="padding:18px 28px;display:flex;flex-direction:column;gap:14px">
+        <sc-for list="{{ lines }}" as="l" hint-placeholder-count="4">
+          <div style="display:flex;align-items:center;gap:14px">
+            <sc-if value="{{ l.hasImg }}" hint-placeholder-val="{{ true }}"><img src="{{ l.img }}" alt="{{ l.name }}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;display:block;flex:none"></img></sc-if>
+            <sc-if value="{{ l.noImg }}" hint-placeholder-val="{{ false }}"><span style="width:48px;height:48px;border-radius:50%;flex:none;background:#26231f;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:22px;color:#d0443f">{{ l.initial }}</span></sc-if>
+            <div style="flex:1;display:flex;flex-direction:column;min-width:0"><span style="font-size:15px">{{ l.name }}</span><span style="font-size:13px;color:#8e8983">Quantità {{ l.qty }}</span></div>
+            <span style="font-size:15px">{{ l.totTxt }}</span>
+          </div>
+        </sc-for>
+        <sc-if value="{{ empty }}" hint-placeholder-val="{{ false }}"><span style="font-size:14px;color:#8e8983">Il carrello è vuoto.</span></sc-if>
+      </div>
+      <div style="padding:18px 28px;display:flex;flex-direction:column;gap:8px;border-top:1px solid rgba(242,239,233,.1);font-size:14px;color:#a39e97">
+        <div style="display:flex;justify-content:space-between"><span>Subtotale</span><span>{{ subTxt }}</span></div>
+        <div style="display:flex;justify-content:space-between"><span>{{ feeLabel }}</span><span>{{ feeTxt }}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:24px;color:#f2efe9;font-weight:500;margin-top:6px"><span>Totale</span><span>{{ totTxt }}</span></div>
+      </div>
+      <div style="padding:0 28px 28px;display:flex;flex-direction:column;gap:12px">
+        <span style="background:#b8262d;color:#fff;padding:19px;text-align:center;font-size:14px;letter-spacing:.2em;text-transform:uppercase;font-weight:500">Continua</span>
+        <span style="font-size:12px;color:#8e8983;text-align:center">Paghi alla consegna · contanti o carta</span>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<div class="dv-opt" id="2b"><div class="dv-olabel"><a class="dv-oid" href="#2b">2b</a>Ordina online · smartphone (interattivo)</div>
+<div class="dv-card" style="width:390px;height:844px;background:#f2efe9;color:#1a1817;border-radius:28px;display:flex;flex-direction:column;position:relative">
+  <div style="background:#141312;padding:12px 20px;display:flex;justify-content:space-between;align-items:center"><img src="assets/logo-chiaro.png" alt="Aldo Prestera" style="height:40px;width:auto;display:block"></img><span style="font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#bdb8b0">Passo 1 di 2</span></div>
+  <div style="flex:1;overflow:auto;display:flex;flex-direction:column">
+    <div style="padding:22px 20px 0;display:flex;flex-direction:column;gap:16px">
+      <h1 style="margin:0;font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:500;font-size:40px;line-height:.95">Menù</h1>
+      <div style="display:grid;grid-template-columns:1fr 1fr;background:#e4e0d9;padding:4px;border-radius:40px;font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:500;text-align:center">
+        <span onClick="{{ setConsegna }}" style="padding:12px;cursor:pointer;border-radius:40px;background:{{ modeA.bg }};color:{{ modeA.fg }}">Consegna</span>
+        <span onClick="{{ setAsporto }}" style="padding:12px;cursor:pointer;border-radius:40px;background:{{ modeB.bg }};color:{{ modeB.fg }}">Ritiro</span>
+      </div>
+      <div style="display:flex;gap:8px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;font-weight:500">
+        <span style="padding:9px 16px;border-radius:40px;background:#b8262d;color:#fff">Speciali</span>
+        <span style="padding:9px 16px;border-radius:40px;border:1px solid #cfc9c0">Classiche</span>
+        <span style="padding:9px 16px;border-radius:40px;border:1px solid #cfc9c0">Bevande</span>
+      </div>
+    </div>
+    <div style="padding:20px 20px 0;display:flex;flex-direction:column;gap:18px">
+      <sc-for list="{{ specials }}" as="it" hint-placeholder-count="4">
+        <div style="background:#fff;display:flex;flex-direction:column">
+          <div style="position:relative">
+            <img src="{{ it.img }}" alt="{{ it.name }}" style="width:100%;aspect-ratio:16/11;object-fit:cover;display:block"></img>
+            <span style="position:absolute;top:12px;left:12px;background:#141312;color:#f2efe9;padding:6px 11px;font-size:15px;font-weight:500">{{ it.priceTxt }}</span>
+            <div style="position:absolute;right:12px;bottom:12px">
+              <sc-if value="{{ it.none }}" hint-placeholder-val="{{ true }}"><span onClick="{{ it.add }}" style="cursor:pointer;width:52px;height:52px;border-radius:50%;background:#b8262d;color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:0 6px 18px rgba(0,0,0,.25)">+</span></sc-if>
+              <sc-if value="{{ it.some }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;height:52px;border-radius:40px;background:#141312;color:#fff;box-shadow:0 6px 18px rgba(0,0,0,.25);overflow:hidden"><span onClick="{{ it.sub }}" style="cursor:pointer;width:48px;height:52px;display:flex;align-items:center;justify-content:center;font-size:20px">−</span><span style="width:22px;text-align:center;font-size:17px;font-weight:600">{{ it.qty }}</span><span onClick="{{ it.add }}" style="cursor:pointer;width:48px;height:52px;display:flex;align-items:center;justify-content:center;font-size:20px;background:#b8262d">+</span></div></sc-if>
+            </div>
+          </div>
+          <div style="padding:14px 16px 18px;display:flex;flex-direction:column;gap:4px"><span style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;line-height:1.05">{{ it.name }}</span><span style="font-size:14px;color:#6b665f;font-weight:300;line-height:1.4">{{ it.desc }}</span></div>
+        </div>
+      </sc-for>
+    </div>
+    <div style="padding:28px 20px 24px;display:flex;flex-direction:column">
+      <span style="font-size:11px;letter-spacing:.36em;text-transform:uppercase;color:#b8262d;font-weight:500;padding-bottom:8px">Le classiche</span>
+      <sc-for list="{{ classics }}" as="it" hint-placeholder-count="4">
+        <div style="display:flex;align-items:center;gap:12px;padding:14px 0;border-top:1px solid #dcd7cf">
+          <div style="flex:1;display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600">{{ it.name }}</span><span style="font-size:13px;color:#6b665f;font-weight:300">{{ it.desc }} · {{ it.priceTxt }}</span></div>
+          <sc-if value="{{ it.none }}" hint-placeholder-val="{{ true }}"><span onClick="{{ it.add }}" style="cursor:pointer;width:44px;height:44px;flex:none;border-radius:50%;border:1px solid #1a1817;display:flex;align-items:center;justify-content:center;font-size:20px">+</span></sc-if>
+          <sc-if value="{{ it.some }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;flex:none;border-radius:40px;background:#141312;color:#fff;overflow:hidden"><span onClick="{{ it.sub }}" style="cursor:pointer;width:40px;height:44px;display:flex;align-items:center;justify-content:center">−</span><span style="width:18px;text-align:center;font-weight:600">{{ it.qty }}</span><span onClick="{{ it.add }}" style="cursor:pointer;width:40px;height:44px;display:flex;align-items:center;justify-content:center;background:#b8262d">+</span></div></sc-if>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+  <div style="margin:0 12px 14px;background:#141312;color:#f2efe9;border-radius:40px;padding:10px 10px 10px 14px;display:flex;align-items:center;gap:12px;box-shadow:0 10px 30px rgba(0,0,0,.3)">
+    <div style="display:flex">
+      <sc-for list="{{ thumbs }}" as="t" hint-placeholder-count="2"><img src="{{ t.img }}" alt="{{ t.name }}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid #141312;margin-right:-10px;display:block"></img></sc-for>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;padding-left:12px;line-height:1.2"><span style="font-size:12px;color:#8e8983">{{ countTxt }}</span><span style="font-size:18px;font-weight:500">{{ totTxt }}</span></div>
+    <span style="background:#b8262d;color:#fff;padding:15px 22px;border-radius:40px;font-size:12px;letter-spacing:.18em;text-transform:uppercase;font-weight:500">Continua</span>
+  </div>
+</div></div>
+
+<div class="dv-opt" id="2c"><div class="dv-olabel"><a class="dv-oid" href="#2c">2c</a>Logo scontornato · su chiaro e su scuro</div>
+<div style="display:flex;flex-direction:column;gap:16px">
+  <div class="dv-card" style="width:420px;padding:40px;background:#f2efe9"><img src="assets/logo-scuro.png" alt="Logo versione scura" style="width:100%;height:auto;display:block"></img></div>
+  <div class="dv-card" style="width:420px;padding:40px;background:#141312"><img src="assets/logo-chiaro.png" alt="Logo versione chiara" style="width:100%;height:auto;display:block"></img></div>
+  <div class="dv-card" style="width:420px;padding:40px;background:#b8262d"><img src="assets/logo-chiaro.png" alt="Logo su rosso" style="width:100%;height:auto;display:block"></img></div>
+</div></div>
+
+</div>
+<p class="dv-next">Prossimi passi: "aggiungi la scheda pizza con varianti/impasti" · "passo 2 con lo stesso stile di <a class="dv-oid" href="#2b">2b</a>" · "menù completo di Aldo"</p>
+</section>
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Aldo Prestera Pizzeria — sito vetrina + ordini online</span></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="1a"><div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Landing page · desktop</div>
+<div class="dv-card" style="width:1280px;color:#f2efe9">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:22px 56px;border-bottom:1px solid rgba(242,239,233,.08)">
+    <img src="assets/logo-chiaro.png" alt="Aldo Prestera Pizzeria" style="height:56px;width:auto;display:block;mix-blend-mode:screen"></img>
+    <div style="display:flex;align-items:center;gap:40px;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:#bdb8b0">
+      <span>Menù</span><span>La pizzeria</span><span>Orari</span><span>Contatti</span>
+      <span style="background:#b8262d;color:#fff;padding:13px 26px;border-radius:2px;letter-spacing:.18em;font-weight:500">Ordina ora</span>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;min-height:620px">
+    <div style="padding:96px 56px 80px;display:flex;flex-direction:column;justify-content:center;gap:28px;background:radial-gradient(120% 90% at 0% 0%,#1f1d1b 0%,#141312 60%)">
+      <div style="font-size:12px;letter-spacing:.42em;text-transform:uppercase;color:#d0443f;font-weight:500">Pizzeria · Asporto e consegna</div>
+      <h1 style="margin:0;font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:500;font-size:88px;line-height:.98;letter-spacing:-.01em;text-wrap:balance">Ordina la pizza online.</h1>
+      <p style="margin:0;max-width:440px;font-size:18px;line-height:1.6;font-weight:300;color:#bdb8b0;text-wrap:pretty">Scegli dal menù e l'orario. Te la portiamo a casa o passi a ritirarla. Paghi alla consegna.</p>
+      <div style="display:flex;gap:14px;margin-top:8px">
+        <span style="background:#b8262d;color:#fff;padding:18px 34px;font-size:14px;letter-spacing:.2em;text-transform:uppercase;font-weight:500;border-radius:2px">Ordina online</span>
+        <span style="border:1px solid rgba(242,239,233,.3);padding:18px 34px;font-size:14px;letter-spacing:.2em;text-transform:uppercase;border-radius:2px">Guarda il menù</span>
+      </div>
+      <div style="display:flex;gap:36px;margin-top:28px;font-size:14px;color:#8e8983">
+        <span>Mar–Dom · 18:30–23:00</span><span>Tel. 000 000 0000</span>
+      </div>
+    </div>
+    <img src="assets/hero-aldo.png" alt="Aldo Prestera" style="width:100%;height:100%;object-fit:cover;object-position:center 30%;display:block"></img>
+  </div>
+  <div style="background:#f2efe9;color:#1a1817;padding:88px 56px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:48px">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="font-size:12px;letter-spacing:.42em;text-transform:uppercase;color:#b8262d;font-weight:500">Dal menù</div>
+        <h2 style="margin:0;font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:500;font-size:60px;line-height:1">Le nostre pizze</h2>
+      </div>
+      <span style="font-size:13px;letter-spacing:.2em;text-transform:uppercase;border-bottom:1px solid #1a1817;padding-bottom:4px">Menù completo</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:32px">
+      <sc-for list="{{ featured }}" as="p" hint-placeholder-count="3">
+        <div style="display:flex;flex-direction:column;gap:18px">
+          <img src="{{ p.img }}" alt="{{ p.name }}" style="aspect-ratio:4/3;width:100%;object-fit:cover;display:block"></img>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px">
+            <span style="font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:600">{{ p.name }}</span>
+            <span style="font-size:18px;font-weight:500;color:#b8262d">{{ p.priceTxt }}</span>
+          </div>
+          <span style="font-size:15px;line-height:1.5;color:#5f5a54;font-weight:300">{{ p.desc }}</span>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+  <div style="padding:88px 56px;display:grid;grid-template-columns:320px 1fr;gap:64px;border-bottom:1px solid rgba(242,239,233,.08)">
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div style="font-size:12px;letter-spacing:.42em;text-transform:uppercase;color:#d0443f;font-weight:500">Ordini online</div>
+      <h2 style="margin:0;font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:500;font-size:56px;line-height:1">Come funziona</h2>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:40px">
+      <div style="display:flex;flex-direction:column;gap:14px;border-top:1px solid #b8262d;padding-top:24px"><span style="font-family:'Cormorant Garamond',serif;font-size:44px;color:#d0443f">01</span><span style="font-size:20px;font-weight:500">Scegli le pizze</span><span style="font-size:15px;line-height:1.55;color:#a39e97;font-weight:300">Aggiungi al carrello quello che vuoi.</span></div>
+      <div style="display:flex;flex-direction:column;gap:14px;border-top:1px solid #b8262d;padding-top:24px"><span style="font-family:'Cormorant Garamond',serif;font-size:44px;color:#d0443f">02</span><span style="font-size:20px;font-weight:500">Ritiro o consegna</span><span style="font-size:15px;line-height:1.55;color:#a39e97;font-weight:300">Scegli l'orario. Per la consegna, lascia l'indirizzo.</span></div>
+      <div style="display:flex;flex-direction:column;gap:14px;border-top:1px solid #b8262d;padding-top:24px"><span style="font-family:'Cormorant Garamond',serif;font-size:44px;color:#d0443f">03</span><span style="font-size:20px;font-weight:500">Paghi alla consegna</span><span style="font-size:15px;line-height:1.55;color:#a39e97;font-weight:300">Contanti o carta. Ti chiamiamo per confermare.</span></div>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr">
+    <div style="padding:72px 56px;display:flex;flex-direction:column;gap:32px">
+      <h2 style="margin:0;font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:500;font-size:48px;line-height:1">Dove siamo</h2>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:28px;font-size:15px;line-height:1.7;color:#bdb8b0;font-weight:300">
+        <div style="display:flex;flex-direction:column"><span style="font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:#d0443f;font-weight:500;margin-bottom:6px">Indirizzo</span><span>Via Esempio 12</span><span>00000 Città (XX)</span></div>
+        <div style="display:flex;flex-direction:column"><span style="font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:#d0443f;font-weight:500;margin-bottom:6px">Orari</span><span>Mar – Dom 18:30 – 23:00</span><span>Lunedì chiuso</span></div>
+        <div style="display:flex;flex-direction:column"><span style="font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:#d0443f;font-weight:500;margin-bottom:6px">Telefono</span><span>000 000 0000</span></div>
+        <div style="display:flex;flex-direction:column"><span style="font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:#d0443f;font-weight:500;margin-bottom:6px">Seguici</span><span>Instagram · Facebook</span></div>
+      </div>
+    </div>
+    <div style="position:relative;overflow:hidden;min-height:380px;background:#1c1a18">
+      <div style="position:absolute;left:-10%;top:0;width:36%;height:44%;background:#232120"></div>
+      <div style="position:absolute;right:-5%;bottom:-5%;width:40%;height:38%;background:#1f2a1f;border-radius:8px"></div>
+      <div style="position:absolute;left:-10%;right:-10%;top:44%;height:14px;background:#34302c;transform:rotate(-6deg)"></div>
+      <div style="position:absolute;left:-10%;right:-10%;top:18%;height:7px;background:#2b2825;transform:rotate(4deg)"></div>
+      <div style="position:absolute;left:-10%;right:-10%;top:78%;height:7px;background:#2b2825;transform:rotate(-2deg)"></div>
+      <div style="position:absolute;top:-10%;bottom:-10%;left:38%;width:12px;background:#34302c;transform:rotate(12deg)"></div>
+      <div style="position:absolute;top:-10%;bottom:-10%;left:72%;width:7px;background:#2b2825;transform:rotate(-8deg)"></div>
+      <div style="position:absolute;top:-10%;bottom:-10%;left:16%;width:6px;background:#2b2825;transform:rotate(3deg)"></div>
+      <span style="position:absolute;left:8%;top:49%;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#6e6963;transform:rotate(-6deg)">Via Esempio</span>
+      <span style="position:absolute;left:41%;top:8%;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#6e6963;transform:rotate(-78deg);transform-origin:left">Corso Garibaldi</span>
+      <span style="position:absolute;right:9%;bottom:14%;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#5d6b5a">Parco</span>
+      <div style="position:absolute;left:44%;top:36%;display:flex;flex-direction:column;align-items:center;gap:6px">
+        <div style="background:#f2efe9;color:#1a1817;padding:8px 12px;font-size:13px;font-weight:500;white-space:nowrap;box-shadow:0 6px 18px rgba(0,0,0,.35)">Aldo Prestera Pizzeria</div>
+        <div style="width:18px;height:18px;border-radius:50%;background:#b8262d;border:3px solid #f2efe9;box-shadow:0 0 0 10px rgba(184,38,45,.25)"></div>
+      </div>
+      <span style="position:absolute;right:20px;bottom:20px;background:#f2efe9;color:#1a1817;padding:10px 16px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;font-weight:500">Indicazioni</span>
+    </div>
+  </div>
+  <div style="padding:22px 56px;display:flex;justify-content:space-between;font-size:12px;color:#6e6963;letter-spacing:.06em;border-top:1px solid rgba(242,239,233,.08)"><span>© 2026 Aldo Prestera Pizzeria · P.IVA 00000000000</span><span>Privacy · Cookie</span></div>
+</div></div>
+
+<div class="dv-opt" id="1b"><div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>Landing page · smartphone</div>
+<div class="dv-card" style="width:390px;color:#f2efe9;border-radius:28px">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px">
+    <img src="assets/logo-chiaro.png" alt="Aldo Prestera Pizzeria" style="height:44px;width:auto;display:block"></img>
+    <div style="display:flex;flex-direction:column;gap:5px;padding:10px"><span style="width:22px;height:1px;background:#f2efe9"></span><span style="width:22px;height:1px;background:#f2efe9"></span><span style="width:14px;height:1px;background:#f2efe9"></span></div>
+  </div>
+  <img src="assets/hero-aldo.png" alt="Aldo Prestera" style="aspect-ratio:1/1;width:100%;object-fit:cover;display:block"></img>
+  <div style="padding:32px 24px 36px;display:flex;flex-direction:column;gap:18px">
+    <div style="font-size:11px;letter-spacing:.38em;text-transform:uppercase;color:#d0443f;font-weight:500">Asporto e consegna</div>
+    <h1 style="margin:0;font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:500;font-size:48px;line-height:1">Ordina la pizza online.</h1>
+    <p style="margin:0;font-size:16px;line-height:1.6;font-weight:300;color:#bdb8b0">A domicilio o da asporto. Paghi alla consegna.</p>
+    <span style="background:#b8262d;color:#fff;padding:18px;text-align:center;font-size:14px;letter-spacing:.2em;text-transform:uppercase;font-weight:500;border-radius:2px;margin-top:6px">Ordina online</span>
+    <span style="border:1px solid rgba(242,239,233,.3);padding:18px;text-align:center;font-size:14px;letter-spacing:.2em;text-transform:uppercase;border-radius:2px">Chiama 000 000 0000</span>
+  </div>
+  <div style="background:#f2efe9;color:#1a1817;padding:36px 24px;display:flex;flex-direction:column;gap:22px">
+    <h2 style="margin:0;font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:500;font-size:38px;line-height:1">Le nostre pizze</h2>
+    <sc-for list="{{ featured }}" as="p" hint-placeholder-count="3">
+      <div style="display:flex;gap:14px;align-items:center;border-top:1px solid #dcd7cf;padding-top:18px">
+        <img src="{{ p.img }}" alt="{{ p.name }}" style="width:72px;height:72px;flex:none;object-fit:cover;display:block"></img>
+        <div style="flex:1;display:flex;flex-direction:column;gap:4px;min-width:0">
+          <div style="display:flex;justify-content:space-between;gap:8px"><span style="font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:600">{{ p.name }}</span><span style="font-size:15px;font-weight:500;color:#b8262d">{{ p.priceTxt }}</span></div>
+          <span style="font-size:13px;line-height:1.45;color:#5f5a54;font-weight:300">{{ p.desc }}</span>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+  <div style="padding:32px 24px;display:flex;flex-direction:column;gap:14px;font-size:15px;line-height:1.6;color:#bdb8b0;font-weight:300">
+    <span style="font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:#d0443f;font-weight:500">Orari e indirizzo</span>
+    <span>Mar – Dom 18:30 – 23:00 · Lunedì chiuso</span>
+    <span>Via Esempio 12, 00000 Città (XX)</span>
+  </div>
+</div></div>
+
+<div class="dv-opt" id="1c"><div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Modulo ordine · desktop (interattivo: aggiungi/togli pizze)</div>
+<div class="dv-card" style="width:1280px;color:#1a1817;background:#f2efe9">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 56px;background:#141312;color:#bdb8b0">
+    <img src="assets/logo-chiaro.png" alt="Aldo Prestera Pizzeria" style="height:48px;width:auto;display:block"></img>
+    <div style="display:flex;gap:28px;font-size:12px;letter-spacing:.24em;text-transform:uppercase"><span style="color:#f2efe9">1 · Menù</span><span>2 · Dati</span><span>3 · Conferma</span></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 400px;align-items:start">
+    <div style="padding:48px 56px;display:flex;flex-direction:column;gap:40px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-end">
+        <h1 style="margin:0;font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:500;font-size:56px;line-height:1">Ordina online</h1>
+        <div style="display:flex;background:#e4e0d9;padding:4px;border-radius:2px;font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:500">
+          <span onClick="{{ setConsegna }}" style="padding:12px 22px;cursor:pointer;background:{{ modeA.bg }};color:{{ modeA.fg }}">Consegna</span>
+          <span onClick="{{ setAsporto }}" style="padding:12px 22px;cursor:pointer;background:{{ modeB.bg }};color:{{ modeB.fg }}">Ritiro</span>
+        </div>
+      </div>
+      <sc-for list="{{ categories }}" as="cat" hint-placeholder-count="3">
+        <div style="display:flex;flex-direction:column">
+          <div style="font-size:12px;letter-spacing:.38em;text-transform:uppercase;color:#b8262d;font-weight:500;padding-bottom:14px;border-bottom:1px solid #1a1817">{{ cat.name }}</div>
+          <sc-for list="{{ cat.items }}" as="it" hint-placeholder-count="3">
+            <div style="display:grid;grid-template-columns:1fr 90px 150px;gap:24px;align-items:center;padding:18px 0;border-bottom:1px solid #dcd7cf">
+              <div style="display:flex;flex-direction:column;gap:3px"><span style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600">{{ it.name }}</span><span style="font-size:14px;color:#6b665f;font-weight:300">{{ it.desc }}</span></div>
+              <span style="font-size:17px;font-weight:500;text-align:right">{{ it.priceTxt }}</span>
+              <div style="display:flex;justify-content:flex-end">
+                <sc-if value="{{ it.none }}" hint-placeholder-val="{{ true }}"><span onClick="{{ it.add }}" style="cursor:pointer;border:1px solid #1a1817;padding:10px 18px;font-size:12px;letter-spacing:.18em;text-transform:uppercase;font-weight:500">Aggiungi</span></sc-if>
+                <sc-if value="{{ it.some }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;background:#1a1817;color:#f2efe9"><span onClick="{{ it.sub }}" style="cursor:pointer;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:18px">−</span><span style="width:30px;text-align:center;font-weight:500">{{ it.qty }}</span><span onClick="{{ it.add }}" style="cursor:pointer;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:18px;background:#b8262d">+</span></div></sc-if>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-for>
+    </div>
+    <div style="position:sticky;top:0;margin:48px 56px 48px 0;background:#141312;color:#f2efe9;padding:32px;display:flex;flex-direction:column;gap:20px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:34px">Il tuo ordine</span><span style="font-size:13px;color:#8e8983">{{ countTxt }}</span></div>
+      <div style="display:flex;flex-direction:column;gap:12px;border-top:1px solid rgba(242,239,233,.12);padding-top:18px">
+        <sc-for list="{{ lines }}" as="l" hint-placeholder-count="3">
+          <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:300"><span><span style="color:#d0443f;font-weight:500">{{ l.qty }}×</span> {{ l.name }}</span><span>{{ l.totTxt }}</span></div>
+        </sc-for>
+        <sc-if value="{{ empty }}" hint-placeholder-val="{{ false }}"><span style="font-size:14px;color:#8e8983">Il carrello è vuoto.</span></sc-if>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;border-top:1px solid rgba(242,239,233,.12);padding-top:18px;font-size:14px;color:#a39e97">
+        <div style="display:flex;justify-content:space-between"><span>Subtotale</span><span>{{ subTxt }}</span></div>
+        <div style="display:flex;justify-content:space-between"><span>{{ feeLabel }}</span><span>{{ feeTxt }}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:22px;color:#f2efe9;font-weight:500;margin-top:8px"><span>Totale</span><span>{{ totTxt }}</span></div>
+      </div>
+      <span style="background:#b8262d;color:#fff;padding:18px;text-align:center;font-size:14px;letter-spacing:.2em;text-transform:uppercase;font-weight:500">Continua</span>
+      <span style="font-size:12px;color:#8e8983;text-align:center;line-height:1.5">Pagamento alla consegna · contanti o carta</span>
+    </div>
+  </div>
+</div></div>
+
+<div class="dv-opt" id="1d"><div class="dv-olabel"><a class="dv-oid" href="#1d">1d</a>Modulo ordine · smartphone — menù</div>
+<div class="dv-card" style="width:390px;height:844px;background:#f2efe9;color:#1a1817;border-radius:28px;display:flex;flex-direction:column">
+  <div style="background:#141312;padding:14px 20px;display:flex;justify-content:space-between;align-items:center"><img src="assets/logo-chiaro.png" alt="Aldo Prestera" style="height:38px;width:auto;display:block"></img><span style="font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#bdb8b0">Passo 1 di 2</span></div>
+  <div style="flex:1;overflow:auto;padding:24px 20px 20px;display:flex;flex-direction:column;gap:26px">
+    <h1 style="margin:0;font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:500;font-size:40px;line-height:1">Ordina online</h1>
+    <div style="display:grid;grid-template-columns:1fr 1fr;background:#e4e0d9;padding:4px;font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:500;text-align:center">
+      <span onClick="{{ setConsegna }}" style="padding:13px;cursor:pointer;background:{{ modeA.bg }};color:{{ modeA.fg }}">Consegna</span>
+      <span onClick="{{ setAsporto }}" style="padding:13px;cursor:pointer;background:{{ modeB.bg }};color:{{ modeB.fg }}">Ritiro</span>
+    </div>
+    <sc-for list="{{ categories }}" as="cat" hint-placeholder-count="2">
+      <div style="display:flex;flex-direction:column">
+        <div style="font-size:11px;letter-spacing:.34em;text-transform:uppercase;color:#b8262d;font-weight:500;padding-bottom:10px;border-bottom:1px solid #1a1817">{{ cat.name }}</div>
+        <sc-for list="{{ cat.items }}" as="it" hint-placeholder-count="3">
+          <div style="display:flex;gap:12px;align-items:center;padding:14px 0;border-bottom:1px solid #dcd7cf">
+            <div style="flex:1;display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600">{{ it.name }}</span><span style="font-size:13px;color:#6b665f;font-weight:300;line-height:1.4">{{ it.desc }}</span><span style="font-size:15px;font-weight:500;margin-top:4px">{{ it.priceTxt }}</span></div>
+            <sc-if value="{{ it.none }}" hint-placeholder-val="{{ true }}"><span onClick="{{ it.add }}" style="cursor:pointer;width:44px;height:44px;flex:none;border:1px solid #1a1817;display:flex;align-items:center;justify-content:center;font-size:20px">+</span></sc-if>
+            <sc-if value="{{ it.some }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;background:#1a1817;color:#f2efe9;flex:none"><span onClick="{{ it.sub }}" style="cursor:pointer;width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:18px">−</span><span style="width:22px;text-align:center;font-weight:500">{{ it.qty }}</span><span onClick="{{ it.add }}" style="cursor:pointer;width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:18px;background:#b8262d">+</span></div></sc-if>
+          </div>
+        </sc-for>
+      </div>
+    </sc-for>
+  </div>
+  <div style="background:#141312;color:#f2efe9;padding:16px 20px 26px;display:flex;align-items:center;justify-content:space-between;gap:16px">
+    <div style="display:flex;flex-direction:column"><span style="font-size:12px;color:#8e8983">{{ countTxt }}</span><span style="font-size:22px;font-weight:500">{{ totTxt }}</span></div>
+    <span style="background:#b8262d;color:#fff;padding:16px 26px;font-size:13px;letter-spacing:.2em;text-transform:uppercase;font-weight:500">Continua</span>
+  </div>
+</div></div>
+
+<div class="dv-opt" id="1e"><div class="dv-olabel"><a class="dv-oid" href="#1e">1e</a>Modulo ordine · smartphone — dati e orario</div>
+<div class="dv-card" style="width:390px;height:844px;background:#f2efe9;color:#1a1817;border-radius:28px;display:flex;flex-direction:column">
+  <div style="background:#141312;padding:14px 20px;display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;color:#bdb8b0">← Menù</span><span style="font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#bdb8b0">Passo 2 di 2</span></div>
+  <div style="flex:1;overflow:auto;padding:24px 20px;display:flex;flex-direction:column;gap:18px">
+    <h1 style="margin:0 0 4px;font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:500;font-size:38px;line-height:1">I tuoi dati</h1>
+    <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#6b665f;font-weight:500">Nome e cognome</span><div style="background:#fff;border:1px solid #d6d1c9;padding:14px;font-size:16px">Marco Rossi</div></div>
+    <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#6b665f;font-weight:500">Telefono</span><div style="background:#fff;border:1px solid #d6d1c9;padding:14px;font-size:16px">333 123 4567</div></div>
+    <sc-if value="{{ isConsegna }}" hint-placeholder-val="{{ true }}">
+      <div style="display:grid;grid-template-columns:1fr 80px;gap:10px">
+        <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#6b665f;font-weight:500">Indirizzo</span><div style="background:#fff;border:1px solid #d6d1c9;padding:14px;font-size:16px">Via Garibaldi</div></div>
+        <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#6b665f;font-weight:500">N°</span><div style="background:#fff;border:1px solid #d6d1c9;padding:14px;font-size:16px">24</div></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-top:18px"><span style="font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#6b665f;font-weight:500">Citofono / piano</span><div style="background:#fff;border:1px solid #d6d1c9;padding:14px;font-size:16px;color:#9a948c">Es. Rossi, 2° piano</div></div>
+    </sc-if>
+    <div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#6b665f;font-weight:500">{{ timeLabel }}</span>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
+        <sc-for list="{{ slots }}" as="s" hint-placeholder-count="8"><span onClick="{{ s.pick }}" style="cursor:pointer;padding:12px 0;text-align:center;font-size:14px;font-weight:500;border:1px solid {{ s.bd }};background:{{ s.bg }};color:{{ s.fg }}">{{ s.t }}</span></sc-for>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#6b665f;font-weight:500">Note per la pizzeria</span><div style="background:#fff;border:1px solid #d6d1c9;padding:14px;font-size:15px;height:48px;color:#9a948c">Es. una margherita senza basilico</div></div>
+    <div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#6b665f;font-weight:500">Pagamento alla consegna</span>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        <sc-for list="{{ pays }}" as="p" hint-placeholder-count="2"><span onClick="{{ p.pick }}" style="cursor:pointer;padding:13px 0;text-align:center;font-size:14px;font-weight:500;border:1px solid {{ p.bd }};background:{{ p.bg }};color:{{ p.fg }}">{{ p.t }}</span></sc-for>
+      </div>
+    </div>
+  </div>
+  <div style="background:#141312;color:#f2efe9;padding:16px 20px 26px;display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;justify-content:space-between;font-size:14px;color:#a39e97"><span>{{ countTxt }} · {{ feeLabel }} {{ feeTxt }}</span><span style="color:#f2efe9;font-size:18px;font-weight:500">{{ totTxt }}</span></div>
+    <span style="background:#b8262d;color:#fff;padding:17px;text-align:center;font-size:13px;letter-spacing:.2em;text-transform:uppercase;font-weight:500">Invia ordine</span>
+  </div>
+</div></div>
+
+<div class="dv-opt" id="1f"><div class="dv-olabel"><a class="dv-oid" href="#1f">1f</a>Conferma per il cliente</div>
+<div class="dv-card" style="width:390px;height:844px;color:#f2efe9;border-radius:28px;display:flex;flex-direction:column">
+  <div style="flex:1;padding:72px 28px 28px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:18px">
+    <img src="assets/logo-chiaro.png" alt="Aldo Prestera Pizzeria" style="width:220px;height:auto;display:block"></img>
+    <div style="width:56px;height:56px;border-radius:50%;border:1px solid #d0443f;display:flex;align-items:center;justify-content:center;color:#d0443f;font-size:24px;margin-top:16px">✓</div>
+    <h1 style="margin:0;font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:500;font-size:42px;line-height:1.02">Ordine ricevuto</h1>
+    <p style="margin:0;font-size:15px;line-height:1.6;color:#bdb8b0;font-weight:300;max-width:290px">Ti chiamiamo per confermare. {{ confirmTxt }}</p>
+    <div style="width:100%;margin-top:14px;border-top:1px solid rgba(242,239,233,.12);border-bottom:1px solid rgba(242,239,233,.12);padding:18px 0;display:flex;flex-direction:column;gap:10px;text-align:left">
+      <div style="display:flex;justify-content:space-between;font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:#8e8983"><span>Ordine n. 0142</span><span>{{ slotTxt }}</span></div>
+      <sc-for list="{{ lines }}" as="l" hint-placeholder-count="3"><div style="display:flex;justify-content:space-between;font-size:15px;font-weight:300"><span><span style="color:#d0443f;font-weight:500">{{ l.qty }}×</span> {{ l.name }}</span><span>{{ l.totTxt }}</span></div></sc-for>
+      <div style="display:flex;justify-content:space-between;font-size:18px;font-weight:500;margin-top:6px"><span>Totale · {{ payTxt }}</span><span>{{ totTxt }}</span></div>
+    </div>
+  </div>
+  <div style="padding:0 28px 34px;display:flex;flex-direction:column;gap:10px"><span style="border:1px solid rgba(242,239,233,.3);padding:16px;text-align:center;font-size:13px;letter-spacing:.2em;text-transform:uppercase">Chiama la pizzeria</span></div>
+</div></div>
+
+<div class="dv-opt" id="1g"><div class="dv-olabel"><a class="dv-oid" href="#1g">1g</a>Come arriva l'ordine ad Aldo (email / WhatsApp)</div>
+<div class="dv-card" style="width:390px;background:#fff;color:#1a1817;border-radius:14px">
+  <div style="padding:18px 22px;border-bottom:1px solid #eee;display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;color:#8a847c">Da: sito web · ordini@aldoprestera.it</span><span style="font-size:17px;font-weight:600">Nuovo ordine #0142 — {{ modeTxt }} {{ slotTxt }}</span></div>
+  <div style="padding:22px;display:flex;flex-direction:column;gap:16px;font-size:15px">
+    <div style="display:flex;flex-direction:column;gap:3px"><span style="font-weight:600">Marco Rossi</span><a href="#1g">333 123 4567</a><sc-if value="{{ isConsegna }}" hint-placeholder-val="{{ true }}"><span style="color:#5f5a54">Via Garibaldi 24 · citofono Rossi, 2° piano</span></sc-if></div>
+    <div style="background:#f6f4f0;padding:14px 16px;display:flex;flex-direction:column;gap:8px">
+      <sc-for list="{{ lines }}" as="l" hint-placeholder-count="3"><div style="display:flex;justify-content:space-between"><span><b>{{ l.qty }}×</b> {{ l.name }}</span><span>{{ l.totTxt }}</span></div></sc-for>
+      <div style="display:flex;justify-content:space-between;border-top:1px solid #e2ded7;padding-top:8px;font-weight:600"><span>Totale ({{ payTxt }})</span><span>{{ totTxt }}</span></div>
+    </div>
+    <div style="font-size:14px;color:#5f5a54"><b style="color:#1a1817">Note:</b> una margherita senza basilico</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><span style="background:#1a1817;color:#fff;padding:13px;text-align:center;font-size:13px;font-weight:500">Chiama cliente</span><span style="border:1px solid #1a1817;padding:13px;text-align:center;font-size:13px;font-weight:500">Apri su mappa</span></div>
+  </div>
+</div></div>
+
+</div>
+<p class="dv-next">Prossimi passi: "aggiungi un pannello per Aldo per gestire gli ordini" · "versione chiara della landing"</p>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { cart: { crudo: 1, wurstel: 1, margherita: 2, birra: 2 }, mode: 'consegna', slot: '20:15', pay: 'Contanti' };
+  menu = [
+    { name: 'Le speciali', items: [
+      { id: 'crudo', name: 'Crudo e rucola', desc: 'Fior di latte, crudo, rucola, scaglie di grana', price: 9.5, img: 'assets/pizza-crudo-rucola.png' },
+      { id: 'friarielli', name: 'Salsiccia e friarielli', desc: 'Fior di latte, salsiccia, friarielli', price: 9, img: 'assets/pizza-salsiccia-friarielli.png' },
+      { id: 'porchetta', name: 'Patate e porchetta', desc: 'Fior di latte, patate al forno, porchetta, crema', price: 10, img: 'assets/pizza-patate-porchetta.png' },
+      { id: 'wurstel', name: 'Würstel e patatine', desc: 'Fior di latte, würstel, patatine fritte', price: 8, img: 'assets/pizza-wurstel-patatine.png' } ] },
+    { name: 'Le classiche', items: [
+      { id: 'margherita', name: 'Margherita', desc: 'Pomodoro, fior di latte, basilico', price: 6 },
+      { id: 'marinara', name: 'Marinara', desc: 'Pomodoro, aglio, origano', price: 5 },
+      { id: 'diavola', name: 'Diavola', desc: 'Pomodoro, fior di latte, salame piccante', price: 7.5 },
+      { id: 'capricciosa', name: 'Capricciosa', desc: 'Cotto, funghi, carciofi, olive', price: 8.5 } ] },
+    { name: 'Bevande', items: [
+      { id: 'acqua', name: 'Acqua 50 cl', desc: 'Naturale o frizzante', price: 1.5 },
+      { id: 'birra', name: 'Birra 33 cl', desc: 'Bionda artigianale', price: 3.5 },
+      { id: 'cola', name: 'Coca-Cola 33 cl', desc: 'In lattina', price: 2.5 } ] } ];
+  eur(n) { return '€ ' + n.toFixed(2).replace('.', ','); }
+  setQty(id, d) { this.setState(s => ({ cart: { ...s.cart, [id]: Math.max(0, (s.cart[id] || 0) + d) } })); }
+  renderVals() {
+    const { cart, mode, slot, pay } = this.state;
+    const all = this.menu.flatMap(c => c.items);
+    const categories = this.menu.map(c => ({ name: c.name, items: c.items.map(it => {
+      const q = cart[it.id] || 0;
+      return { ...it, priceTxt: this.eur(it.price), qty: q, none: q === 0, some: q > 0, add: () => this.setQty(it.id, 1), sub: () => this.setQty(it.id, -1) };
+    }) }));
+    const lines = all.filter(i => cart[i.id] > 0).map(i => ({ name: i.name, qty: cart[i.id], totTxt: this.eur(i.price * cart[i.id]), img: i.img, hasImg: !!i.img, noImg: !i.img, initial: i.name[0] }));
+    const sub = all.reduce((a, i) => a + i.price * (cart[i.id] || 0), 0);
+    const count = lines.reduce((a, l) => a + l.qty, 0);
+    const isC = mode === 'consegna';
+    const fee = isC && count ? 2 : 0;
+    const on = { bg: '#1a1817', fg: '#f2efe9' }, off = { bg: 'transparent', fg: '#6b665f' };
+    const chip = (sel) => sel ? { bg: '#1a1817', fg: '#f2efe9', bd: '#1a1817' } : { bg: '#fff', fg: '#1a1817', bd: '#d6d1c9' };
+    return {
+      featured: [all[0], all[1], all[2]].map(i => ({ ...i, priceTxt: this.eur(i.price) })),
+      categories, lines, specials: categories[0].items, classics: categories[1].items, drinks: categories[2].items,
+      thumbs: lines.filter(l => l.hasImg).slice(0, 3), empty: count === 0,
+      countTxt: count === 1 ? '1 articolo' : count + ' articoli',
+      subTxt: this.eur(sub), feeLabel: isC ? 'Consegna' : 'Ritiro', feeTxt: isC ? this.eur(fee) : 'gratis',
+      totTxt: this.eur(sub + fee),
+      modeA: isC ? on : off, modeB: isC ? off : on, isConsegna: isC,
+      setConsegna: () => this.setState({ mode: 'consegna' }), setAsporto: () => this.setState({ mode: 'asporto' }),
+      timeLabel: isC ? 'Orario di consegna' : 'Orario di ritiro',
+      slots: ['19:30','19:45','20:00','20:15','20:30','20:45','21:00','21:15'].map(t => ({ t, ...chip(t === slot), pick: () => this.setState({ slot: t }) })),
+      pays: ['Contanti','Carta / POS'].map(t => ({ t, ...chip(t === pay), pick: () => this.setState({ pay: t }) })),
+      payTxt: pay === 'Contanti' ? 'contanti' : 'carta',
+      modeTxt: isC ? 'Consegna' : 'Ritiro', slotTxt: 'ore ' + slot,
+      confirmTxt: isC ? 'Consegna alle ' + slot + '.' : 'Pronta alle ' + slot + '.'
+    };
+  }
+}
+</script>
+</body>
+</html>
