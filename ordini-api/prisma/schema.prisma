@@ -89,7 +89,8 @@ model Ordine {
   indirizzo_spedizione_id   BigInt?
   indirizzo_fatturazione_id BigInt?
   stato                     StatoOrdine @default(bozza)
-  totale                    Decimal     @default(0) @db.Decimal(10, 2)
+  costo_consegna            Decimal     @default(0) @db.Decimal(10, 2) // IVA inclusa, 0 per il ritiro
+  totale                    Decimal     @default(0) @db.Decimal(10, 2) // righe + costo_consegna
   valuta                    String      @default("EUR") @db.Char(3)
   note                      String?     @db.Text
   creato_il                 DateTime    @default(now()) @db.DateTime(3)

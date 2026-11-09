@@ -39,4 +39,4 @@ coordinate della mappa, menù e prezzi. Testi di Privacy e Cookie in `src/pages/
 - La mappa è un embed OpenStreetMap in tinta scura; "Indicazioni" apre Google Maps.
 - Il carrello e la modalità (consegna/ritiro) sono salvati in `localStorage`.
 - In sviluppo gli slot ignorano l'orario attuale e il giorno di chiusura, per poter provare il flusso.
-- Il contatore ordini è in `ORDERS_DIR/counter.json` (default `./.data`): serve un host con disco persistente.
+- Gli ordini e il numero d'ordine stanno nel database di `ordini-api` (`ORDINI_API_URL`). Non c'è un limite di ordini per fascia oraria: in futuro Aldo bloccherà le fasce da una sua interfaccia.

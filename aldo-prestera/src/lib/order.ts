@@ -17,6 +17,10 @@ export interface Customer {
   zone: string;
   street: string;
   number: string;
+  /** CAP di 5 cifre (solo consegna) */
+  cap: string;
+  /** Sigla della provincia, 2 lettere (solo consegna) */
+  province: string;
   intercom: string;
   notes: string;
 }
@@ -72,10 +76,12 @@ export const computeTotals = (cart: Cart, mode: Mode, menu: MenuCategory[], zone
 export const minOrderTxt = () => `Ordine minimo per la consegna ${eur(delivery.minOrder)}`;
 
 export type FieldErrors = Partial<
-  Record<'name' | 'phone' | 'email' | 'zone' | 'street' | 'number' | 'slot' | 'privacy' | 'cart', string>
+  Record<'name' | 'phone' | 'email' | 'zone' | 'street' | 'number' | 'cap' | 'province' | 'slot' | 'privacy' | 'cart', string>
 >;
 
 const PHONE_RE = /^\+?[\d\s./-]{6,20}$/;
+const CAP_RE = /^\d{5}$/;
+const PROVINCE_RE = /^[A-Za-z]{2}$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 /** Validazione condivisa tra modulo e server */
@@ -96,6 +102,8 @@ export const validateOrder = (
     if (!delivery.zones.some((z) => z.id === c.zone)) e.zone = 'Scegli il comune.';
     if (!c.street.trim()) e.street = "Inserisci l'indirizzo.";
     if (!c.number.trim()) e.number = 'N° civico.';
+    if (!CAP_RE.test(c.cap.trim())) e.cap = 'CAP di 5 cifre.';
+    if (!PROVINCE_RE.test(c.province.trim())) e.province = 'Sigla, es. CE.';
   }
   if (!o.slot) e.slot = 'Scegli un orario.';
   if (!o.privacy) e.privacy = "Devi accettare l'informativa privacy.";

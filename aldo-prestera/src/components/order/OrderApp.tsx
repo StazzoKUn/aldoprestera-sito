@@ -50,6 +50,8 @@ const emptyCustomer: Customer = {
   zone: delivery.zones[0]?.id ?? '',
   street: '',
   number: '',
+  cap: '',
+  province: '',
   intercom: '',
   notes: '',
 };
@@ -140,13 +142,13 @@ export default function OrderApp({ menu, images, logo, phone, phoneHref }: Props
   const feeLabel = isC ? 'Consegna' : 'Ritiro';
   const feeTxt = isC ? eur(totals.fee) : 'gratis';
 
-  // Slot liberi chiesti al server (orari + capacità del forno), aggiornati ogni minuto
+  // Slot prenotabili chiesti al server (orari di apertura e anticipo), aggiornati ogni minuto
   useEffect(() => {
     if (step !== 'dati') return;
     let alive = true;
     const load = async () => {
       try {
-        const res = await fetch(`/api/slot?mode=${mode}&pizze=${totals.pizzas}`);
+        const res = await fetch(`/api/slot?mode=${mode}`);
         if (!res.ok) throw new Error();
         const data: { slots: string[] } = await res.json();
         if (!alive) return;
@@ -162,7 +164,7 @@ export default function OrderApp({ menu, images, logo, phone, phoneHref }: Props
       alive = false;
       clearInterval(t);
     };
-  }, [step, mode, totals.pizzas, slotsReload]);
+  }, [step, mode, slotsReload]);
   useEffect(() => {
     if (slots && !slots.includes(slot)) setSlot(slots[0] ?? '');
   }, [slots]);
@@ -423,6 +425,14 @@ export default function OrderApp({ menu, images, logo, phone, phoneHref }: Props
                   </Field>
                   <Field label="N°" error={errors.number} id="f-number">
                     <input id="f-number" type="text" required {...field('number')} aria-invalid={!!errors.number} />
+                  </Field>
+                </div>
+                <div class="o-row-cap">
+                  <Field label="CAP" error={errors.cap} id="f-cap">
+                    <input id="f-cap" type="text" inputMode="numeric" autocomplete="postal-code" maxLength={5} required {...field('cap')} aria-invalid={!!errors.cap} />
+                  </Field>
+                  <Field label="Provincia" error={errors.province} id="f-province">
+                    <input id="f-province" type="text" autocomplete="address-level1" maxLength={2} placeholder="CE" required {...field('province')} aria-invalid={!!errors.province} />
                   </Field>
                 </div>
                 <Field label="Citofono / piano" id="f-intercom">

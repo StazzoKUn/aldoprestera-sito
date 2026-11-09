@@ -13,7 +13,9 @@ Sito web della **Aldo Prestera Pizzeria** (https://www.aldoprestera.it).
 
 ### Stato attuale vs obiettivo
 
-Oggi gli ordini sono validati in `src/pages/api/ordine.ts`, il contatore è su file (`ORDERS_DIR`, `.data/`) e la comanda parte via email (`src/lib/notify.ts`) e WhatsApp (`whatsapp-bot/`). **L'obiettivo è la persistenza su MySQL.** Quando si tocca la persistenza, migrare verso MySQL: non estendere lo storage su file.
+Gli ordini sono validati in `src/pages/api/ordine.ts` e salvati su MariaDB tramite `ordini-api` (numero d'ordine assegnato dal DB); la comanda parte via email (`src/lib/notify.ts`) e WhatsApp (`whatsapp-bot/`).
+
+**Slot orari:** nessun limite di ordini per fascia (decisione del 2026-11-09). Il server controlla solo che lo slot sia valido (non passato, dentro gli orari). Più avanti Aldo potrà **bloccare fasce orarie da una sua interfaccia** (back-office, da sviluppare alla fine): quando si tocca `slots.ts` o `/api/slot`, predisporre il punto in cui applicare quei blocchi, senza reintrodurre limiti automatici di capacità.
 
 ### Fasi
 
@@ -42,7 +44,8 @@ Non avviare dev server con Bash se è disponibile il preview integrato.
 | `src/components/order/OrderApp.tsx` | Flusso Menù → Dati e orario → Conferma |
 | `src/pages/api/*.ts` | Endpoint server (`prerender = false`): solo qui gira codice backend |
 | `src/lib/` | Logica condivisa: `order.ts`, `slots.ts`, `store.ts`, `notify.ts`, `whatsapp.ts`, `format.ts` |
-| `src/data/menu.ts` | **Unica fonte** del menù (categorie → voci `{id,name,desc,price,img?}`) |
+| `src/lib/ordini-api.ts` | Client di `ordini-api` (`ORDINI_API_URL`, default `http://127.0.0.1:3000`): menù da MariaDB (`/ordina` e `/api/ordine`) e salvataggio ordini. **L'API deve essere accesa** |
+| `src/data/menu.ts` | Solo i tipi del menù e la vetrina statica della home (`featured`); il menù ordinabile viene dal DB |
 | `src/data/site.ts` | **Unica fonte** di telefono, indirizzo, P.IVA, orari, social, mappa, regole slot |
 | `whatsapp-bot/` | Servizio separato per le comande WhatsApp |
 | `docs/` | Specifiche, deploy, TODO Fase 2 |

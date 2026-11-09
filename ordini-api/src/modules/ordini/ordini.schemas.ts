@@ -4,7 +4,7 @@
 // altro campo (es. "prezzo_unitario" o "totale" mandati dal client -> 400).
 import { z } from "zod";
 import { paginationQuery } from "../../lib/pagination.js";
-import { idSchema } from "../../lib/schemas.js";
+import { idSchema, importoSchema } from "../../lib/schemas.js";
 import { STATI } from "./ordini.stato.js";
 
 const rigaInput = z.strictObject({
@@ -39,6 +39,8 @@ export const ordineCreateSchema = z.strictObject({
   indirizzo_spedizione_id: idBody.nullish(),
   indirizzo_fatturazione_id: idBody.nullish(),
   note: z.string().trim().max(65535).nullish(),
+  // Consegna in euro (0 = ritiro): il totale dell'ordine è righe + consegna
+  costo_consegna: importoSchema.default("0"),
   righe: righeInput,
 });
 

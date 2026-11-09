@@ -51,7 +51,8 @@ export async function createOrdine(input: OrdineCreate) {
   return prisma.$transaction(async (tx) => {
     await lockCliente(tx, input.cliente_id);
     await verificaIndirizzi(tx, input.cliente_id, input);
-    const { righe, totale } = await preparaRighe(tx, input.righe);
+    const { righe, totale: totaleRighe } = await preparaRighe(tx, input.righe);
+    const totale = conConsegna(totaleRighe, input.costo_consegna);
 
     const { id } = await tx.ordine.create({
       data: {
@@ -61,6 +62,7 @@ export async function createOrdine(input: OrdineCreate) {
         indirizzo_fatturazione_id: input.indirizzo_fatturazione_id ?? null,
         note: input.note ?? null,
         valuta: "EUR",
+        costo_consegna: input.costo_consegna,
         totale,
         righe: { create: righe },
       },
@@ -91,7 +93,8 @@ export async function replaceRighe(id: bigint, input: RigaInput[]) {
   return prisma.$transaction(async (tx) => {
     const ordine = await lockOrdine(tx, id);
     richiediBozza(ordine.stato, "le righe");
-    const { righe, totale } = await preparaRighe(tx, input);
+    const { righe, totale: totaleRighe } = await preparaRighe(tx, input);
+    const totale = conConsegna(totaleRighe, ordine.costo_consegna);
 
     await tx.rigaOrdine.deleteMany({ where: { ordine_id: id } });
     await tx.rigaOrdine.createMany({ data: righe.map((r) => ({ ...r, ordine_id: id })) });
@@ -117,8 +120,9 @@ export async function cambiaStato(id: bigint, nuovo: StatoOrdine) {
  * vede lo stato già aggiornato dalla prima.
  */
 async function lockOrdine(tx: Tx, id: bigint) {
-  const rows = await tx.$queryRaw<{ id: bigint; cliente_id: bigint; stato: StatoOrdine }[]>`
-    SELECT id, cliente_id, stato FROM ordine WHERE id = ${id} FOR UPDATE`;
+  const rows = await tx.$queryRaw<
+    { id: bigint; cliente_id: bigint; stato: StatoOrdine; costo_consegna: Prisma.Decimal }[]
+  >`SELECT id, cliente_id, stato, costo_consegna FROM ordine WHERE id = ${id} FOR UPDATE`;
   const ordine = rows[0];
   if (!ordine) throw notFound(`Ordine ${id} non trovato`);
   return ordine;
@@ -188,6 +192,13 @@ async function preparaRighe(tx: Tx, input: RigaInput[]) {
   if (totale.greaterThan(IMPORTO_MASSIMO)) throw badRequest("Il totale supera l'importo massimo consentito");
 
   return { righe, totale };
+}
+
+// Totale dell'ordine = totale righe + consegna, entro l'importo massimo
+function conConsegna(totaleRighe: Prisma.Decimal, costoConsegna: Prisma.Decimal | string) {
+  const totale = arrotonda(totaleRighe.add(costoConsegna));
+  if (totale.greaterThan(IMPORTO_MASSIMO)) throw badRequest("Il totale supera l'importo massimo consentito");
+  return totale;
 }
 
 // numero_ordine è NOT NULL e UNIQUE, ma l'id lo conosciamo solo dopo l'INSERT:

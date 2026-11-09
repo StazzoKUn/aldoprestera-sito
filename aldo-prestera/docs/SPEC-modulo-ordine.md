@@ -80,6 +80,6 @@ Accanto al pagamento alla consegna, il cliente può pagare subito online.
 | --- | --- | --- |
 | 1 | Numero dedicato del sito e numero di Aldo che riceve le comande | Da fornire |
 | 1b | Account Stripe della pizzeria (e chiavi di test per lo sviluppo) | Da creare a nome di Aldo |
-| 2 | Capacità per slot (pizze ogni 15') | Da chiedere ad Aldo |
+| 2 | ~~Capacità per slot~~ | Nessun limite: sarà Aldo a bloccare le fasce da una sua interfaccia (da sviluppare) |
 | 3 | Zona di consegna, ordine minimo, tariffa per zona | Da chiedere ad Aldo |
 | 4 | Chiusura straordinaria degli ordini online (serata piena, ferie) | Interruttore in Fase 2 |

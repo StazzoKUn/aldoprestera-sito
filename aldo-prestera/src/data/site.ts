@@ -36,8 +36,6 @@ export const orderHours = {
   step: 15,
   /** Anticipo minimo rispetto all'ora attuale, in minuti */
   leadMinutes: { consegna: 45, asporto: 30 },
-  /** Pizze che il forno può preparare per ogni slot (segnaposto) */
-  maxPizzasPerSlot: 8,
   timeZone: 'Europe/Rome',
 } as const;
 

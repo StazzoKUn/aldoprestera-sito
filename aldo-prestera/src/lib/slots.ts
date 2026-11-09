@@ -49,7 +49,3 @@ export const availableSlots = (mode: Mode, now = new Date(), ignoreClock = false
   const earliest = minutes + orderHours.leadMinutes[mode];
   return allSlots().filter((s) => toMin(s) >= earliest);
 };
-
-/** Slot con ancora posto nel forno per `pizzas` pizze, dati gli slot già occupati */
-export const freeSlots = (slots: string[], pizzas: number, booked: Record<string, number>) =>
-  slots.filter((s) => pizzas === 0 || (booked[s] ?? 0) + pizzas <= orderHours.maxPizzasPerSlot);

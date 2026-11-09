@@ -1,6 +1,7 @@
 {
   "version": "0.0.1",
   "configurations": [
-    { "name": "aldo-dev", "runtimeExecutable": "npm", "runtimeArgs": ["--prefix", "aldo-prestera", "run", "dev", "--", "--port", "4321"], "port": 4321 }
+    { "name": "aldo-dev", "runtimeExecutable": "npm", "runtimeArgs": ["--prefix", "aldo-prestera", "run", "dev", "--", "--port", "4321"], "port": 4321 },
+    { "name": "ordini-api", "runtimeExecutable": "npm", "runtimeArgs": ["--prefix", "ordini-api", "run", "dev"], "port": 3000 }
   ]
 }

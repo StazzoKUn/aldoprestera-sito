@@ -527,6 +527,12 @@ fieldset.o-field .o-label {
   gap: 10px;
 }
 
+.o-row-cap {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
 .o-chips {
   display: grid;
   gap: 6px;

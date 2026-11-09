@@ -2,24 +2,26 @@
 import { getImage } from 'astro:assets';
 import Layout from '../layouts/Layout.astro';
 import OrderApp, { type ItemImage } from '../components/order/OrderApp';
-import { menu, allItems } from '../data/menu';
+import type { MenuCategory } from '../data/menu';
 import { site } from '../data/site';
-import { menuImage } from '../lib/images';
+import { loadMenu } from '../lib/ordini-api';
 import logoChiaro from '../assets/logo-chiaro.png';
 import '../styles/ordina.css';
 
-// Immagini ottimizzate passate all'isola (che non può usare <Image>)
-const images: Record<string, ItemImage> = {};
-for (const it of allItems) {
-  const src = menuImage(it.img);
-  if (!src) continue;
-  const [sm, lg, thumb] = await Promise.all([
-    getImage({ src, width: 480, format: 'webp' }),
-    getImage({ src, width: 800, format: 'webp' }),
-    getImage({ src, width: 96, height: 96, format: 'webp' }),
-  ]);
-  images[it.id] = { src: lg.src, srcset: `${sm.src} 480w, ${lg.src} 800w`, thumb: thumb.src };
+// Il menù viene dal database (ordini-api) a ogni richiesta: la pagina non è statica
+export const prerender = false;
+
+let menu: MenuCategory[] = [];
+let menuError = false;
+try {
+  menu = await loadMenu();
+} catch (err) {
+  console.error('[ordina] menù non disponibile', err);
+  menuError = true;
 }
+
+// Le foto dei prodotti non sono ancora nel database: l'isola mostra le iniziali
+const images: Record<string, ItemImage> = {};
 const [logo1, logo2, logoLg] = await Promise.all([
   getImage({ src: logoChiaro, height: 52, format: 'png' }),
   getImage({ src: logoChiaro, height: 104, format: 'png' }),
@@ -29,6 +31,14 @@ const logo = { src: logo1.src, srcset: `${logo1.src} 1x, ${logo2.src} 2x`, large
 ---
 
 <Layout title={`Ordina online · ${site.name}`} bg="paper">
+  {menuError ? (
+    <main class="o-closed" style="padding:48px 24px;max-width:560px;margin:0 auto">
+      <h1>Menù non disponibile</h1>
+      <p>
+        Non riusciamo a caricare il menù. Riprova tra qualche minuto o chiamaci al <a href={site.phoneHref}>{site.phone}</a>.
+      </p>
+    </main>
+  ) : (
   <OrderApp
     client:load
     menu={menu}
@@ -37,4 +47,5 @@ const logo = { src: logo1.src, srcset: `${logo1.src} 1x, ${logo2.src} 2x`, large
     phone={site.phone}
     phoneHref={site.phoneHref}
   />
+  )}
 </Layout>
