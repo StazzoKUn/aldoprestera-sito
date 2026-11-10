@@ -1,7 +1,58 @@
 {
   "version": "0.0.1",
   "configurations": [
-    { "name": "aldo-dev", "runtimeExecutable": "npm", "runtimeArgs": ["--prefix", "aldo-prestera", "run", "dev", "--", "--port", "4321"], "port": 4321 },
-    { "name": "ordini-api", "runtimeExecutable": "npm", "runtimeArgs": ["--prefix", "ordini-api", "run", "dev"], "port": 3000 }
+    {
+      "name": "aldo-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "aldo-prestera",
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "4321"
+      ],
+      "port": 4321
+    },
+    {
+      "name": "ordini-api",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "ordini-api",
+        "run",
+        "dev"
+      ],
+      "port": 3000
+    },
+    {
+      "name": "aldo-dev-prova",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "--env-file=aldo-prestera/dev-senza-invii.env",
+        "aldo-prestera/node_modules/astro/bin/astro.mjs",
+        "dev",
+        "--root",
+        "aldo-prestera",
+        "--port",
+        "4322"
+      ],
+      "port": 4322
+    },
+    {
+      "name": "aldo-dev-smtp-guasto",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "--env-file=aldo-prestera/dev-smtp-guasto.env",
+        "aldo-prestera/node_modules/astro/bin/astro.mjs",
+        "dev",
+        "--root",
+        "aldo-prestera",
+        "--port",
+        "4323"
+      ],
+      "port": 4323
+    }
   ]
 }

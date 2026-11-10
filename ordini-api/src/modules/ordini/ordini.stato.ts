@@ -1,23 +1,25 @@
 // Macchina a stati dell'ordine: quali cambi di stato sono ammessi.
 //
-//   bozza ──► confermato ──► spedito ──► consegnato
-//     │            │
-//     └──────┬─────┘
-//            ▼
-//        annullato
+//   bozza ──► ricevuto ──► accettato ──► consegnato
+//     │          │            │  ▲            │
+//     │          │            │  └────────────┘  (solo correzione di un errore)
+//     │          ▼            ▼
+//     │       rifiutato    rifiutato
+//     ▼
+//  annullato   (solo errori tecnici)
 //
-// È una tabella pura, senza database: il futuro modulo pagamenti potrà usarla
-// (es. pagamento riuscito -> "confermato") senza duplicare le regole.
+// È una tabella pura, senza database.
 import { StatoOrdine } from "../../generated/prisma/enums.js";
 import { conflict } from "../../lib/errors.js";
 
 export const STATI = Object.values(StatoOrdine) as [StatoOrdine, ...StatoOrdine[]];
 
 export const TRANSIZIONI: Record<StatoOrdine, readonly StatoOrdine[]> = {
-  bozza: ["confermato", "annullato"],
-  confermato: ["spedito", "annullato"],
-  spedito: ["consegnato"],
-  consegnato: [],
+  bozza: ["ricevuto", "annullato"],
+  ricevuto: ["accettato", "rifiutato"],
+  accettato: ["consegnato", "rifiutato"],
+  consegnato: ["accettato"], // correzione di un errore
+  rifiutato: [],
   annullato: [],
 };
 

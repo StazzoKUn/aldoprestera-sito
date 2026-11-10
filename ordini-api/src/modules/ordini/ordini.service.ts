@@ -1,12 +1,14 @@
 // Logica degli ordini. Ogni operazione che scrive è una transazione:
 // o va a buon fine tutta (COMMIT), o non resta traccia di nulla (ROLLBACK).
 import { prisma } from "../../db/prisma.js";
+import { randomBytes } from "node:crypto";
 import { Prisma, type StatoOrdine } from "../../generated/prisma/client.js";
 import { badRequest, conflict, notFound } from "../../lib/errors.js";
 import { arrotonda, IMPORTO_MASSIMO, somma } from "../../lib/money.js";
 import { paginated, toSkipTake } from "../../lib/pagination.js";
 import { lockCliente } from "../clienti/clienti.service.js";
 import type { OrdineCreate, OrdineUpdate, OrdiniListQuery, RigaInput } from "./ordini.schemas.js";
+import { MOTIVO_SCADENZA } from "./ordini.motivi.js";
 import { verificaTransizione } from "./ordini.stato.js";
 
 type Tx = Prisma.TransactionClient;
@@ -36,6 +38,70 @@ export async function getOrdine(id: bigint) {
   return ordine;
 }
 
+// ---------------------------------------------------------------- scadenza e lettura pubblica
+
+/** Dopo questo tempo in "ricevuto" senza risposta l'ordine passa a "rifiutato" */
+export const SCADENZA_MS = 15 * 60_000;
+
+/**
+ * Applica la scadenza a UN ordine (in transazione, con lock): se è ancora "ricevuto" e ha più di
+ * 15 minuti diventa "rifiutato" con il motivo automatico. Restituisce true solo a chi ha fatto
+ * il cambio: è quel chiamante che deve mandare l'email al cliente (una volta sola).
+ * Nessun timer in background: la scadenza si applica quando qualcuno legge l'ordine.
+ */
+async function scadiSeNecessario(id: bigint): Promise<boolean> {
+  return prisma.$transaction(async (tx) => {
+    const rows = await tx.$queryRaw<{ stato: StatoOrdine; creato_il: Date }[]>`
+      SELECT stato, creato_il FROM ordine WHERE id = ${id} FOR UPDATE`;
+    const o = rows[0];
+    if (!o || o.stato !== "ricevuto" || Date.now() - o.creato_il.getTime() < SCADENZA_MS) return false;
+    verificaTransizione(o.stato, "rifiutato");
+    await tx.ordine.update({ where: { id }, data: { stato: "rifiutato", motivo_stato: MOTIVO_SCADENZA } });
+    return true;
+  });
+}
+
+/** Fa scadere tutti gli ordini "ricevuto" troppo vecchi (per le letture del pannello). Restituisce gli id scaduti ora. */
+export async function scadiOrdiniVecchi(): Promise<bigint[]> {
+  const vecchi = await prisma.ordine.findMany({
+    where: { stato: "ricevuto", creato_il: { lt: new Date(Date.now() - SCADENZA_MS) } },
+    select: { id: true },
+  });
+  const scaduti: bigint[] = [];
+  for (const { id } of vecchi) if (await scadiSeNecessario(id)) scaduti.push(id);
+  return scaduti;
+}
+
+/**
+ * Stato dell'ordine per la pagina di attesa del cliente, dal codice pubblico (mai dal numero).
+ * Restituisce SOLO ciò che serve alla pagina; `contatto` c'è solo se l'ordine è scaduto proprio ora
+ * (serve al sito per mandare l'email di rifiuto e non va mostrato al browser).
+ */
+export async function getOrdinePubblico(codice: string) {
+  const trovato = await prisma.ordine.findUnique({ where: { codice_pubblico: codice }, select: { id: true } });
+  if (!trovato) throw notFound("Ordine non trovato");
+  const appena_scaduto = await scadiSeNecessario(trovato.id);
+
+  const o = await prisma.ordine.findUniqueOrThrow({
+    where: { id: trovato.id },
+    include: { righe: { orderBy: { id: "asc" } }, cliente: { select: { email: true } } },
+  });
+  return {
+    numero_ordine: o.numero_ordine,
+    stato: o.stato,
+    motivo_stato: o.motivo_stato,
+    modalita: o.modalita,
+    orario_richiesto: o.orario_richiesto,
+    metodo_pagamento: o.metodo_pagamento,
+    attesa_secondi: Math.floor((Date.now() - o.creato_il.getTime()) / 1000),
+    costo_consegna: o.costo_consegna,
+    totale: o.totale,
+    righe: o.righe.map((r) => ({ nome_prodotto: r.nome_prodotto, quantita: r.quantita, totale_riga: r.totale_riga })),
+    appena_scaduto,
+    contatto: appena_scaduto ? { nome: o.nome_cliente, email: o.cliente.email } : null,
+  };
+}
+
 // ---------------------------------------------------------------- creazione
 
 /**
@@ -60,6 +126,14 @@ export async function createOrdine(input: OrdineCreate) {
         cliente_id: input.cliente_id,
         indirizzo_spedizione_id: input.indirizzo_spedizione_id ?? null,
         indirizzo_fatturazione_id: input.indirizzo_fatturazione_id ?? null,
+        stato: input.stato,
+        codice_pubblico: codicePubblico(),
+        modalita: input.modalita,
+        orario_richiesto: input.orario_richiesto,
+        metodo_pagamento: input.metodo_pagamento,
+        nome_cliente: input.nome_cliente,
+        telefono_cliente: input.telefono_cliente,
+        citofono: input.citofono ?? null,
         note: input.note ?? null,
         valuta: "EUR",
         costo_consegna: input.costo_consegna,
@@ -104,11 +178,16 @@ export async function replaceRighe(id: bigint, input: RigaInput[]) {
 
 // ---------------------------------------------------------------- cambio di stato
 
-export async function cambiaStato(id: bigint, nuovo: StatoOrdine) {
+export async function cambiaStato(id: bigint, nuovo: StatoOrdine, motivo?: string) {
   return prisma.$transaction(async (tx) => {
     const ordine = await lockOrdine(tx, id);
     verificaTransizione(ordine.stato, nuovo); // 409 se non ammesso
-    return tx.ordine.update({ where: { id }, data: { stato: nuovo }, include: dettaglio });
+    // motivo_stato è compilato solo su "rifiutato" e si azzera in ogni altro stato
+    return tx.ordine.update({
+      where: { id },
+      data: { stato: nuovo, motivo_stato: nuovo === "rifiutato" ? (motivo ?? null) : null },
+      include: dettaglio,
+    });
   });
 }
 
@@ -119,7 +198,7 @@ export async function cambiaStato(id: bigint, nuovo: StatoOrdine) {
  * cambi di stato contemporanei) vengono eseguite una dopo l'altra, e la seconda
  * vede lo stato già aggiornato dalla prima.
  */
-async function lockOrdine(tx: Tx, id: bigint) {
+export async function lockOrdine(tx: Tx, id: bigint) {
   const rows = await tx.$queryRaw<
     { id: bigint; cliente_id: bigint; stato: StatoOrdine; costo_consegna: Prisma.Decimal }[]
   >`SELECT id, cliente_id, stato, costo_consegna FROM ordine WHERE id = ${id} FOR UPDATE`;
@@ -211,4 +290,9 @@ function numeroProvvisorio() {
 function numeroOrdine(id: bigint) {
   const anno = new Intl.DateTimeFormat("it-IT", { timeZone: "Europe/Rome", year: "numeric" }).format(new Date());
   return `ORD-${anno}-${id.toString().padStart(6, "0")}`;
+}
+
+// Codice casuale (128 bit, 22 caratteri URL-safe) per la pagina di attesa: non indovinabile
+function codicePubblico() {
+  return randomBytes(16).toString("base64url");
 }

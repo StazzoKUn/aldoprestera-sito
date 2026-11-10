@@ -49,3 +49,13 @@ export const availableSlots = (mode: Mode, now = new Date(), ignoreClock = false
   const earliest = minutes + orderHours.leadMinutes[mode];
   return allSlots().filter((s) => toMin(s) >= earliest);
 };
+
+/** Istante (UTC) di oggi alle `slot` (HH:MM) nel fuso della pizzeria: è l'orario_richiesto salvato in DB */
+export const slotToDate = (slot: string, now = new Date()): Date => {
+  const [y, mo, d] = nowInPizzeria(now).date.split('-').map(Number);
+  const guess = Date.UTC(y, mo - 1, d, ...(slot.split(':').map(Number) as [number, number]));
+  const wall = nowInPizzeria(new Date(guess)); // com'è quell'istante sull'orologio di Roma
+  const [wy, wm, wd] = wall.date.split('-').map(Number);
+  const wallMs = Date.UTC(wy, wm - 1, wd) + wall.minutes * 60_000;
+  return new Date(guess - (wallMs - guess));
+};

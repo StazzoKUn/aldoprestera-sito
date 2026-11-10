@@ -1,0 +1,22 @@
+---
+import { getImage } from 'astro:assets';
+import Layout from '../../layouts/Layout.astro';
+import WaitApp from '../../components/order/WaitApp';
+import { site } from '../../data/site';
+import logoChiaro from '../../assets/logo-chiaro.png';
+import '../../styles/ordina.css';
+
+// Pagina di attesa dell'ordine: privata (il codice è l'unico "accesso"), mai indicizzata
+export const prerender = false;
+Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+Astro.response.headers.set('Cache-Control', 'no-store');
+
+const code = Astro.params.codice ?? '';
+const validCode = /^[A-Za-z0-9_-]{16,32}$/.test(code);
+
+const logoLg = await getImage({ src: logoChiaro, width: 440, format: 'png' });
+---
+
+<Layout title={`Il tuo ordine · ${site.name}`} bg="ink" noindex>
+  <WaitApp client:load code={validCode ? code : ''} logo={logoLg.src} phone={site.phone} phoneHref={site.phoneHref} />
+</Layout>

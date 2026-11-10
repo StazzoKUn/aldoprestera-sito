@@ -1,0 +1,40 @@
+---
+import { getImage } from 'astro:assets';
+import Layout from '../../layouts/Layout.astro';
+import Pannello from '../../components/gestione/Pannello';
+import { site } from '../../data/site';
+import { currentUser } from '../../lib/gestione';
+import logoChiaro from '../../assets/logo-chiaro.png';
+import '../../styles/gestione.css';
+
+// Pannello di Aldo: richiede il login, mai in cache, mai indicizzato
+export const prerender = false;
+Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+Astro.response.headers.set('Cache-Control', 'no-store');
+
+let user = null;
+let unavailable = false;
+try {
+  user = await currentUser(Astro.cookies);
+} catch (err) {
+  console.error('[gestione] verifica sessione', err);
+  unavailable = true;
+}
+if (!user && !unavailable) return Astro.redirect('/gestione/login');
+
+const [logo1, logo2] = await Promise.all([
+  getImage({ src: logoChiaro, height: 40, format: 'png' }),
+  getImage({ src: logoChiaro, height: 80, format: 'png' }),
+]);
+---
+
+<Layout title={`Gestione ordini · ${site.name}`} bg="paper" noindex>
+  {unavailable ? (
+    <main class="g-center">
+      <h1>Servizio non disponibile</h1>
+      <p>Non riusciamo a collegarci al sistema ordini. Controlla che sia acceso e <a href="/gestione">riprova</a>.</p>
+    </main>
+  ) : (
+    <Pannello client:load userName={user!.nome} logo={{ src: logo1.src, srcset: `${logo1.src} 1x, ${logo2.src} 2x` }} />
+  )}
+</Layout>

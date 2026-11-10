@@ -9,6 +9,8 @@ const envSchema = z.object({
   DATABASE_URL: z
     .string()
     .regex(/^(mysql|mariadb):\/\//, "deve iniziare con mysql:// o mariadb://"),
+  // Segreto condiviso col server del sito: senza non si entra in nessuna route (tranne /health).
+  ORDINI_API_TOKEN: z.string().min(16, "deve essere lungo almeno 16 caratteri"),
   // Facoltativa: forza il log SQL (true/false). Se assente, è attivo solo in development.
   LOG_QUERIES: z.enum(["true", "false"]).optional(),
 });

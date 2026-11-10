@@ -17,13 +17,21 @@ datasource db {
   provider = "mysql"
 }
 
-// Diventa una colonna ENUM('bozza','confermato',...) nella tabella ordine.
+// Diventa una colonna ENUM('bozza','ricevuto',...) nella tabella ordine.
+// Transizioni ammesse: src/modules/ordini/ordini.stato.ts.
+// Non esistono tabelle per gli stati né per lo storico dei cambi di stato.
 enum StatoOrdine {
   bozza
-  confermato
-  spedito
+  ricevuto
+  accettato
   consegnato
+  rifiutato
   annullato
+}
+
+enum ModalitaOrdine {
+  consegna
+  asporto
 }
 
 model Cliente {
@@ -83,18 +91,30 @@ model Prodotto {
 }
 
 model Ordine {
-  id                        BigInt      @id @default(autoincrement())
-  numero_ordine             String      @unique @db.VarChar(20)
+  id                        BigInt         @id @default(autoincrement())
+  numero_ordine             String         @unique @db.VarChar(20)
   cliente_id                BigInt
   indirizzo_spedizione_id   BigInt?
   indirizzo_fatturazione_id BigInt?
-  stato                     StatoOrdine @default(bozza)
-  costo_consegna            Decimal     @default(0) @db.Decimal(10, 2) // IVA inclusa, 0 per il ritiro
-  totale                    Decimal     @default(0) @db.Decimal(10, 2) // righe + costo_consegna
-  valuta                    String      @default("EUR") @db.Char(3)
-  note                      String?     @db.Text
-  creato_il                 DateTime    @default(now()) @db.DateTime(3)
-  aggiornato_il             DateTime    @updatedAt @db.DateTime(3)
+  stato                     StatoOrdine    @default(bozza)
+  // Codice casuale non indovinabile per la pagina di attesa del cliente (mai il numero d'ordine)
+  codice_pubblico           String         @unique @db.VarChar(32)
+  // Motivo del rifiuto (anche quello automatico di scadenza); per ora solo su "rifiutato"
+  motivo_stato              String?        @db.VarChar(200)
+  // Dati salvati sull'ordine: il pannello legge questi, non quelli di cliente (possono essere vecchi)
+  modalita                  ModalitaOrdine
+  orario_richiesto          DateTime       @db.DateTime(3) // UTC: data di oggi + slot, calcolata dal server
+  metodo_pagamento          String         @db.VarChar(32)
+  nome_cliente              String         @db.VarChar(150)
+  telefono_cliente          String         @db.VarChar(32)
+  citofono                  String?        @db.VarChar(80)
+  costo_consegna            Decimal        @default(0) @db.Decimal(10, 2) // IVA inclusa, 0 per il ritiro
+  totale                    Decimal        @default(0) @db.Decimal(10, 2) // righe + costo_consegna
+  totale_rimborsato         Decimal        @default(0) @db.Decimal(10, 2) // somma dei rimborsi registrati
+  valuta                    String         @default("EUR") @db.Char(3)
+  note                      String?        @db.Text // solo note del cliente
+  creato_il                 DateTime       @default(now()) @db.DateTime(3)
+  aggiornato_il             DateTime       @updatedAt @db.DateTime(3)
 
   // Un cliente con ordini non si può eliminare: lo storico ordini va conservato.
   cliente Cliente @relation(fields: [cliente_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
@@ -104,12 +124,15 @@ model Ordine {
   indirizzo_spedizione   Indirizzo? @relation("IndirizzoSpedizione", fields: [indirizzo_spedizione_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
   indirizzo_fatturazione Indirizzo? @relation("IndirizzoFatturazione", fields: [indirizzo_fatturazione_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
-  righe RigaOrdine[]
+  righe    RigaOrdine[]
+  rimborsi Rimborso[]
 
   // Copre il filtro "ordini di un cliente in un certo stato" e fa anche
   // da indice per la foreign key cliente_id (colonna più a sinistra).
   @@index([cliente_id, stato])
   @@index([stato])
+  @@index([stato, orario_richiesto])
+  @@index([orario_richiesto])
   @@index([indirizzo_spedizione_id])
   @@index([indirizzo_fatturazione_id])
   @@map("ordine")
@@ -132,7 +155,76 @@ model RigaOrdine {
   // Un prodotto presente in un ordine non si può eliminare: si disattiva (attivo = false).
   prodotto Prodotto @relation(fields: [prodotto_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
+  rimborsi_righe RimborsoRiga[]
+
   @@index([ordine_id])
   @@index([prodotto_id])
   @@map("riga_ordine")
+}
+
+// Registro dei rimborsi: NON usato (rimborsi tolti dal gestionale il 2026-11-09, tabelle lasciate nel DB). Non è uno stato dell'ordine.
+// Si registra solo su ordini "consegnato", anche più volte. Righe e totale dell'ordine non cambiano.
+model Rimborso {
+  id             BigInt   @id @default(autoincrement())
+  ordine_id      BigInt
+  importo        Decimal  @db.Decimal(10, 2) // totale del rimborso = righe + quota_consegna
+  quota_consegna Decimal  @default(0) @db.Decimal(10, 2)
+  metodo         String   @db.VarChar(32)
+  motivo         String   @db.VarChar(200)
+  creato_il      DateTime @default(now()) @db.DateTime(3)
+
+  // Un ordine con rimborsi non si può eliminare.
+  ordine Ordine         @relation(fields: [ordine_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  righe  RimborsoRiga[]
+
+  @@index([ordine_id])
+  @@map("rimborso")
+}
+
+model RimborsoRiga {
+  id             BigInt  @id @default(autoincrement())
+  rimborso_id    BigInt
+  riga_ordine_id BigInt
+  quantita       Int
+  importo        Decimal @db.Decimal(10, 2) // calcolato dal server: prezzo_unitario della riga × quantita
+
+  rimborso    Rimborso   @relation(fields: [rimborso_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  riga_ordine RigaOrdine @relation(fields: [riga_ordine_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([rimborso_id])
+  @@index([riga_ordine_id])
+  @@map("rimborso_riga")
+}
+
+// Account di Aldo per /gestione: uno solo, senza ruoli (creato con `npm run admin:crea`).
+model Utente {
+  id                BigInt    @id @default(autoincrement())
+  username          String    @unique @db.VarChar(64)
+  nome              String    @db.VarChar(100)
+  password_hash     String    @db.VarChar(255) // scrypt (node:crypto), mai la password
+  attivo            Boolean   @default(true)
+  tentativi_falliti Int       @default(0)
+  bloccato_fino     DateTime? @db.DateTime(3)
+  ultimo_accesso    DateTime? @db.DateTime(3)
+  creato_il         DateTime  @default(now()) @db.DateTime(3)
+
+  sessioni Sessione[]
+
+  @@map("utente")
+}
+
+// Sessione di login: nel DB c'è solo l'hash del token (il token vero sta nel cookie).
+model Sessione {
+  id         BigInt   @id @default(autoincrement())
+  utente_id  BigInt
+  token_hash String   @unique @db.VarChar(64) // SHA-256 esadecimale
+  scade_il   DateTime @db.DateTime(3)
+  ultimo_uso DateTime @default(now()) @db.DateTime(3)
+  creato_il  DateTime @default(now()) @db.DateTime(3)
+
+  utente Utente @relation(fields: [utente_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([utente_id])
+  @@index([scade_il])
+  @@map("sessione")
 }

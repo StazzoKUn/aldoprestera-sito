@@ -17,7 +17,9 @@
     "prisma:validate": "prisma validate",
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "admin:crea": "tsx scripts/admin-crea.ts",
+    "admin:dev": "tsx scripts/admin-dev.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "7.10.1",

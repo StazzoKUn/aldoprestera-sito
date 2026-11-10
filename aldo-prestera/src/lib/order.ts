@@ -3,8 +3,9 @@ import type { MenuCategory } from '../data/menu';
 import { eur } from './format';
 
 export type Mode = 'consegna' | 'asporto';
-export type Pay = 'Contanti' | 'Carta / POS';
-export const PAYS: Pay[] = ['Contanti', 'Carta / POS'];
+/** Si paga solo in contanti (al fattorino o al ritiro): niente scelta del metodo */
+export type Pay = 'Contanti';
+export const PAYS: Pay[] = ['Contanti'];
 
 /** { idVoce: quantità } */
 export type Cart = Record<string, number>;
@@ -45,12 +46,8 @@ export interface OrderLine {
 export interface OrderResponse {
   ok: true;
   number: string;
-  lines: OrderLine[];
-  subtotal: number;
-  fee: number;
-  total: number;
-  /** false se il riepilogo al cliente non è partito (l'ordine è comunque valido) */
-  customerEmailSent: boolean;
+  /** Codice pubblico: porta alla pagina di attesa /ordine/<code> */
+  code: string;
 }
 
 export const zoneById = (id: string) => delivery.zones.find((z) => z.id === id) ?? delivery.zones[0];

@@ -11,17 +11,35 @@ export class ApiError extends Error {
   constructor(
     message: string,
     public status: number,
+    /** Corpo grezzo della risposta d'errore (JSON { error: { message } } di ordini-api) */
+    public detail = '',
   ) {
     super(message);
   }
+
+  /** Messaggio d'errore pulito di ordini-api, se c'è (es. "Cambio di stato non consentito") */
+  get apiMessage(): string | null {
+    try {
+      const m = (JSON.parse(this.detail) as { error?: { message?: string } }).error?.message;
+      return typeof m === 'string' ? m : null;
+    } catch {
+      return null;
+    }
+  }
 }
 
-async function call<T>(path: string, init?: { method?: string; body?: unknown }): Promise<T> {
+export async function call<T>(path: string, init?: { method?: string; body?: unknown; session?: string }): Promise<T> {
   let res: Response;
   try {
     res = await fetch(baseUrl() + path, {
       method: init?.method ?? 'GET',
-      headers: init?.body === undefined ? undefined : { 'Content-Type': 'application/json' },
+      headers: {
+        // Segreto condiviso: l'API rifiuta tutto ciò che non arriva dal server del sito
+        Authorization: `Bearer ${env('ORDINI_API_TOKEN') ?? ''}`,
+        ...(init?.body === undefined ? {} : { 'Content-Type': 'application/json' }),
+        // Sessione di Aldo (dal cookie HttpOnly) per le route di gestione
+        ...(init?.session ? { 'X-Sessione': init.session } : {}),
+      },
       body: init?.body === undefined ? undefined : JSON.stringify(init.body),
       signal: AbortSignal.timeout(5000),
     });
@@ -30,7 +48,7 @@ async function call<T>(path: string, init?: { method?: string; body?: unknown })
   }
   if (!res.ok) {
     const detail = await res.text().catch(() => '');
-    throw new ApiError(`ordini-api ${init?.method ?? 'GET'} ${path} → ${res.status} ${detail.slice(0, 300)}`, res.status);
+    throw new ApiError(`ordini-api ${init?.method ?? 'GET'} ${path} → ${res.status} ${detail.slice(0, 300)}`, res.status, detail);
   }
   return (await res.json()) as T;
 }
@@ -199,9 +217,11 @@ async function findOrCreateIndirizzo(
 }
 
 export interface NewOrder {
-  customer: { name: string; email: string; phone: string };
-  /** Dati senza colonna propria (modalità, orario, pagamento, citofono, note): finiscono in ordine.note */
-  note: string;
+  customer: { name: string; email: string; phone: string; intercom: string; notes: string };
+  mode: 'consegna' | 'asporto';
+  /** Orario richiesto: oggi + slot, calcolato dal server */
+  requestedAt: Date;
+  pay: string;
   /** { idProdotto: quantità } */
   cart: Record<string, number>;
   /** Costo della consegna in euro (0 per il ritiro): l'API lo somma al totale */
@@ -210,25 +230,49 @@ export interface NewOrder {
   delivery?: { street: string; city: string; cap: string; province: string };
 }
 
-/** Salva l'ordine in stato "bozza" (nessun invio ancora): restituisce id e numero assegnati dal DB */
-export async function createOrder(o: NewOrder): Promise<{ id: string; number: string }> {
+/** Salva l'ordine direttamente in stato "ricevuto": restituisce id, numero e codice pubblico assegnati dal server */
+export async function createOrder(o: NewOrder): Promise<{ id: string; number: string; code: string }> {
   const clienteId = await findOrCreateCliente(o.customer);
   const indirizzoId = o.delivery ? await findOrCreateIndirizzo(clienteId, o.customer.name, o.delivery) : null;
-  const ordine = await call<{ id: string; numero_ordine: string }>('/ordini', {
+  const ordine = await call<{ id: string; numero_ordine: string; codice_pubblico: string }>('/ordini', {
     method: 'POST',
     body: {
       cliente_id: clienteId,
       indirizzo_spedizione_id: indirizzoId,
+      stato: 'ricevuto',
+      modalita: o.mode,
+      orario_richiesto: o.requestedAt.toISOString(),
+      metodo_pagamento: o.pay,
+      nome_cliente: o.customer.name.trim(),
+      telefono_cliente: o.customer.phone.trim(),
+      citofono: o.customer.intercom.trim() || null,
       costo_consegna: o.fee,
-      note: o.note,
+      note: o.customer.notes.trim() || null,
       righe: Object.entries(o.cart).map(([prodotto_id, quantita]) => ({ prodotto_id, quantita })),
     },
   });
-  return { id: ordine.id, number: ordine.numero_ordine };
+  return { id: ordine.id, number: ordine.numero_ordine, code: ordine.codice_pubblico };
 }
 
-export const confirmOrder = (id: string) =>
-  call(`/ordini/${id}/stato`, { method: 'PATCH', body: { stato: 'confermato' } });
+/* ---------- Pagina di attesa ---------- */
 
-export const cancelOrder = (id: string) =>
-  call(`/ordini/${id}/stato`, { method: 'PATCH', body: { stato: 'annullato' } });
+export type OrderState = 'bozza' | 'ricevuto' | 'accettato' | 'consegnato' | 'rifiutato' | 'annullato';
+
+/** Risposta dell'API per la pagina di attesa (importi già in euro) */
+export interface PublicOrder {
+  numero_ordine: string;
+  stato: OrderState;
+  motivo_stato: string | null;
+  modalita: 'consegna' | 'asporto';
+  orario_richiesto: string;
+  metodo_pagamento: string;
+  attesa_secondi: number;
+  costo_consegna: number;
+  totale: number;
+  righe: { nome_prodotto: string; quantita: number; totale_riga: number }[];
+  appena_scaduto: boolean;
+  /** Solo se l'ordine è scaduto proprio ora: serve per l'email, non va mandato al browser */
+  contatto: { nome: string; email: string } | null;
+}
+
+export const getPublicOrder = (code: string) => call<PublicOrder>(`/ordini/pubblico/${encodeURIComponent(code)}`);

@@ -3,7 +3,7 @@
 // - PRODOTTI: il menu ufficiale di Aldo Prestera (vedi seed/prodotti-aldo-prestera.ts)
 // - CLIENTI, INDIRIZZI e ORDINI: dati di fantasia
 //
-// ATTENZIONE: prima di inserire SVUOTA le 5 tabelle e azzera i contatori AUTO_INCREMENT,
+// ATTENZIONE: prima di inserire SVUOTA le tabelle del menù e degli ordini (non utenti e sessioni) e azzera i contatori AUTO_INCREMENT,
 // così ogni esecuzione riparte dagli stessi dati (ORD-2026-000001, ...).
 // La struttura e lo storico delle migrazioni non vengono toccati.
 
@@ -36,7 +36,7 @@ try {
 async function svuotaDatabase() {
   // Ordine inverso rispetto alle foreign key: prima i "figli", poi i "padri"
   // (con ON DELETE RESTRICT, cancellare prima un cliente con ordini darebbe errore).
-  for (const tabella of ["riga_ordine", "ordine", "indirizzo", "cliente", "prodotto"]) {
+  for (const tabella of ["rimborso_riga", "rimborso", "riga_ordine", "ordine", "indirizzo", "cliente", "prodotto"]) {
     await prisma.$executeRawUnsafe(`DELETE FROM \`${tabella}\``);
     await prisma.$executeRawUnsafe(`ALTER TABLE \`${tabella}\` AUTO_INCREMENT = 1`);
   }
@@ -176,8 +176,22 @@ async function inserisciOrdini(sku: Map<string, bigint>, c: Clienti) {
   const casa = (cl: { indirizzi: { id: bigint }[] }, i = 0) => cl.indirizzi[i]!.id;
 
   // Stessa funzione usata da POST /ordini: snapshot, totali, numero_ordine, transazione
-  const crea = (cliente: { id: bigint }, spedizione: bigint, fatturazione: bigint, righe: [string, number][], note?: string) =>
+  const crea = (
+    cliente: { id: bigint; nome: string; cognome: string; telefono: string | null },
+    spedizione: bigint,
+    fatturazione: bigint,
+    righe: [string, number][],
+    note?: string,
+    stato: "bozza" | "ricevuto" = "ricevuto",
+  ) =>
     ordini.createOrdine({
+      stato,
+      modalita: "consegna",
+      orario_richiesto: new Date(Date.now() + 60 * 60_000),
+      metodo_pagamento: "Contanti",
+      nome_cliente: `${cliente.nome} ${cliente.cognome}`,
+      telefono_cliente: cliente.telefono ?? "+39 333 0000000",
+      costo_consegna: "2.00",
       cliente_id: cliente.id,
       indirizzo_spedizione_id: spedizione,
       indirizzo_fatturazione_id: fatturazione,
@@ -186,21 +200,21 @@ async function inserisciOrdini(sku: Map<string, bigint>, c: Clienti) {
     });
 
   // Stessa funzione usata da PATCH /ordini/:id/stato: rispetta le transizioni ammesse
-  const avanza = async (ordine: { id: bigint }, ...stati: ("confermato" | "spedito" | "consegnato" | "annullato")[]) => {
-    for (const s of stati) await ordini.cambiaStato(ordine.id, s);
+  const avanza = async (ordine: { id: bigint }, ...stati: ("accettato" | "consegnato" | "annullato" | "rifiutato")[]) => {
+    for (const s of stati) await ordini.cambiaStato(ordine.id, s, s === "rifiutato" ? "Prodotto non disponibile" : undefined);
   };
 
   const o1 = await crea(c.mario, casa(c.mario), casa(c.mario), [["CLA-MARGHERITA", 2], ["BEV-COCA-COLA-ORIGINAL-TASTE-CAN-33-CL", 2]]);
-  await avanza(o1, "confermato", "spedito", "consegnato");
+  await avanza(o1, "accettato", "consegnato");
 
   const o2 = await crea(c.mario, casa(c.mario, 1), casa(c.mario), [["CLA-DIAVOLA", 1], ["FRI-FRITTO-MISTO", 1], ["BIR-PERONI-33-CL", 1]], "Consegna in studio, citofono 3");
-  await avanza(o2, "confermato", "spedito");
+  await avanza(o2, "accettato");
 
   const o3 = await crea(c.giulia, casa(c.giulia), casa(c.giulia), [["MET-MISTA-AL-METRO", 1], ["FRI-FRITTURINA-MISTA", 2], ["BIR-PERONI-BIRRA-66-CL", 2]], "Festa di compleanno: metà margherita, metà capricciosa");
-  await avanza(o3, "confermato");
+  void o3; // resta "ricevuto": in attesa della risposta di Aldo
 
   // Resta in bozza: si può ancora modificare con PATCH /ordini/:id e PUT /ordini/:id/righe
-  await crea(c.giulia, casa(c.giulia), casa(c.giulia), [["CLA-PRIMAVERA", 1], ["SPE-PISTACHIELLA", 1], ["DOL-PIZZA-ALLA-NUTELLA", 1]]);
+  await crea(c.giulia, casa(c.giulia), casa(c.giulia), [["CLA-PRIMAVERA", 1], ["SPE-PISTACHIELLA", 1], ["DOL-PIZZA-ALLA-NUTELLA", 1]], undefined, "bozza");
 
   // Pranzo in ufficio: spedizione e fatturazione diverse
   const o5 = await crea(c.azienda, casa(c.azienda, 0), casa(c.azienda, 1), [
@@ -210,18 +224,18 @@ async function inserisciOrdini(sku: Map<string, bigint>, c: Clienti) {
     ["BEV-ACQUA-NATURALE-50CL", 4],
     ["BEV-ACQUA-FRIZZANTE-50CL", 2],
   ], "Pranzo riunione, consegna ore 13:00");
-  await avanza(o5, "confermato", "spedito", "consegnato");
+  await avanza(o5, "accettato", "consegnato");
 
   // Annullato direttamente dalla bozza
-  const o6 = await crea(c.antonio, casa(c.antonio), casa(c.antonio), [["CLA-SG-MARGHERITA-SENZA-GLUTINE", 1], ["FRI-CROCCHE-SENZA-GLUTINE-MEDIO", 2]]);
+  const o6 = await crea(c.antonio, casa(c.antonio), casa(c.antonio), [["CLA-SG-MARGHERITA-SENZA-GLUTINE", 1], ["FRI-CROCCHE-SENZA-GLUTINE-MEDIO", 2]], undefined, "bozza");
   await avanza(o6, "annullato");
 
-  // Confermato e poi annullato
+  // Ricevuto e poi rifiutato da Aldo
   const o7 = await crea(c.antonio, casa(c.antonio), casa(c.antonio), [["SPE-LA-SORRISI", 1], ["VIN-FALANGHINA-25CL", 1]]);
-  await avanza(o7, "confermato", "annullato");
+  await avanza(o7, "rifiutato");
 
   const o8 = await crea(c.azienda, casa(c.azienda, 0), casa(c.azienda, 1), [["CLA-CAPRICCIOSA", 3], ["CLA-4-FORMAGGI", 2], ["CLA-MARGHERITA-DOP", 3], ["BEV-COCA-COLA-ZERO-ZUCCHERI-330-ML", 8]]);
-  await avanza(o8, "confermato");
+  void o8; // resta "ricevuto"
 
   console.log("Ordini inseriti: 8 (almeno uno per ogni stato)");
 }

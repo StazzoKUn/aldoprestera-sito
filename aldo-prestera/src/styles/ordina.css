@@ -634,6 +634,70 @@ fieldset.o-field .o-label {
   color: #f0a3a0;
 }
 
+/* ---------- Pagina di attesa ordine (/ordine/<codice>) ---------- */
+.o-wait__ring {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 1px solid var(--line-dark-2);
+  border-top-color: var(--red-on-dark);
+  margin-top: 16px;
+  animation: o-spin 1.4s linear infinite;
+}
+@keyframes o-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .o-wait__ring {
+    animation: none;
+    border-color: var(--red-on-dark);
+  }
+}
+.o-wait__status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+.o-confirm h1.o-wait__title {
+  font-size: 34px;
+}
+.o-wait__slow {
+  color: var(--on-dark) !important;
+  border: 1px solid var(--line-dark-2);
+  padding: 12px 14px;
+  max-width: 330px !important;
+}
+.o-wait__slow a {
+  color: var(--red-on-dark);
+}
+.o-wait__offline {
+  color: #f0a3a0 !important;
+  font-size: 13px !important;
+}
+/* Banner "hai un ordine in corso" sopra il menù */
+.o-pending {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  min-height: 44px;
+  padding: 10px 20px;
+  background: var(--ink);
+  color: var(--on-dark);
+  font-size: 14px;
+  text-decoration: none;
+}
+.o-pending__go {
+  color: var(--red-on-dark);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 12px;
+}
+
 /* ---------- Passo 3 · Conferma ---------- */
 .o-confirm {
   min-height: 100vh;

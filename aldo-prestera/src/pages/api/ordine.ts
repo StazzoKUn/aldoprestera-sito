@@ -1,8 +1,9 @@
 import type { APIRoute } from 'astro';
-import { PAYS, computeTotals, validateOrder, zoneById, type Cart, type Customer, type OrderRequest, type OrderResponse } from '../../lib/order';
-import { availableSlots } from '../../lib/slots';
-import { orderWhatsApp, sendCustomerEmail, sendOrderEmail, type PlacedOrder } from '../../lib/notify';
-import { ApiError, cancelOrder, confirmOrder, createOrder, loadMenu } from '../../lib/ordini-api';
+import { computeTotals, validateOrder, zoneById, type Cart, type Customer, type OrderRequest, type OrderResponse, type Pay } from '../../lib/order';
+import { availableSlots, slotToDate } from '../../lib/slots';
+import { orderWhatsApp, sendOrderEmail, type PlacedOrder } from '../../lib/notify';
+import { ApiError, createOrder, loadMenu } from '../../lib/ordini-api';
+import { consenti } from '../../lib/ratelimit';
 import { sendWhatsApp } from '../../lib/whatsapp';
 
 export const prerender = false;
@@ -12,30 +13,12 @@ const json = (body: unknown, status = 200) =>
 
 const str = (v: unknown, max: number) => (typeof v === 'string' ? v.slice(0, max) : '');
 
-class OrderError extends Error {
-  constructor(
-    message: string,
-    public status: number,
-    public fields?: Record<string, string>,
-  ) {
-    super(message);
+export const POST: APIRoute = async ({ request, clientAddress }) => {
+  // Anti-spam: limite per IP sull'invio degli ordini
+  if (!consenti(`ordine:${clientAddress}`, 8, 10 * 60_000)) {
+    return json({ ok: false, error: 'Troppi tentativi ravvicinati. Riprova tra qualche minuto o chiamaci.' }, 429);
   }
-}
 
-/** Dati che l'API ordini non ha in colonne proprie (modalità, orario, pagamento, telefono, citofono, note) */
-const orderNote = (o: Pick<OrderRequest, 'mode' | 'slot' | 'pay' | 'customer'>) => {
-  const c = o.customer;
-  return [
-    `${o.mode === 'consegna' ? 'Consegna' : 'Ritiro'} ore ${o.slot} · pagamento: ${o.pay}`,
-    `${c.name.trim()} · tel. ${c.phone.trim()}`,
-    o.mode === 'consegna' && c.intercom.trim() ? `Citofono: ${c.intercom.trim()}` : null,
-    c.notes.trim() ? `Note: ${c.notes.trim()}` : null,
-  ]
-    .filter((l) => l !== null)
-    .join('\n');
-};
-
-export const POST: APIRoute = async ({ request, site }) => {
   let body: Partial<OrderRequest>;
   try {
     body = await request.json();
@@ -58,7 +41,7 @@ export const POST: APIRoute = async ({ request, site }) => {
   }
   const mode = body.mode === 'asporto' ? 'asporto' : 'consegna';
   const isC = mode === 'consegna';
-  const pay = PAYS.includes(body.pay as never) ? body.pay! : PAYS[0];
+  const pay: Pay = 'Contanti'; // solo contanti: il client non sceglie
   const c = (body.customer ?? {}) as Partial<Customer>;
   const customer: Customer = {
     name: str(c.name, 80),
@@ -88,64 +71,42 @@ export const POST: APIRoute = async ({ request, site }) => {
     return json({ ok: false, error: "L'orario scelto non è più disponibile. Scegline un altro.", fields: { slot: 'Orario non più disponibile.' } }, 409);
   }
 
-  let order: PlacedOrder;
+  // 1) Salvataggio in DB, direttamente in stato "ricevuto": se fallisce l'ordine non esiste e non compare ad Aldo
+  let saved: { id: string; number: string; code: string };
   try {
-    // Prima si salva in DB (stato bozza): il numero lo assegna il database
-    let saved: { id: string; number: string };
-    try {
-      saved = await createOrder({
-        customer,
-        cart,
-        fee: totals.fee,
-        note: orderNote({ mode, slot, pay, customer }),
-        delivery: isC
-          ? {
-              street: `${customer.street.trim()} ${customer.number.trim()}`,
-              city: zoneById(customer.zone).name,
-              cap: customer.cap,
-              province: customer.province,
-            }
-          : undefined,
-      });
-    } catch (err) {
-      console.error('[ordine] salvataggio su ordini-api fallito', err);
-      if (err instanceof ApiError && err.status === 409) {
-        throw new OrderError('Un prodotto del carrello non è più disponibile. Ricarica il menù.', 409);
-      }
-      throw new OrderError("Non siamo riusciti a inviare l'ordine. Riprova o chiamaci.", 503);
-    }
-    const number = saved.number;
-    order = { cart, mode, slot, pay, customer, privacy, number, lines: totals.lines, fee: totals.fee, total: totals.total };
-    try {
-      await sendOrderEmail(order);
-    } catch (err) {
-      console.error(`[ordine] comanda #${number} non inviata, annullo l'ordine`, err);
-      await cancelOrder(saved.id).catch((e) => console.error(`[ordine] #${number} non annullato`, e));
-      throw new OrderError("Non siamo riusciti a inviare l'ordine. Riprova o chiamaci.", 502);
-    }
-    await confirmOrder(saved.id).catch((e) => console.error(`[ordine] #${number} non confermato in DB`, e));
+    saved = await createOrder({
+      customer,
+      mode,
+      requestedAt: slotToDate(slot),
+      pay,
+      cart,
+      fee: totals.fee,
+      delivery: isC
+        ? {
+            street: `${customer.street.trim()} ${customer.number.trim()}`,
+            city: zoneById(customer.zone).name,
+            cap: customer.cap,
+            province: customer.province,
+          }
+        : undefined,
+    });
   } catch (err) {
-    if (err instanceof OrderError) return json({ ok: false, error: err.message, fields: err.fields }, err.status);
-    console.error('[ordine] errore inatteso', err);
-    return json({ ok: false, error: "Non siamo riusciti a inviare l'ordine. Riprova o chiamaci." }, 500);
+    console.error('[ordine] salvataggio su ordini-api fallito', err);
+    if (err instanceof ApiError && err.status === 409) {
+      return json({ ok: false, error: 'Un prodotto del carrello non è più disponibile. Ricarica il menù.' }, 409);
+    }
+    return json({ ok: false, error: "Non siamo riusciti a inviare l'ordine. Riprova o chiamaci." }, 503);
   }
 
-  // Canali secondari: non bloccano l'ordine
-  const logoUrl = site ? new URL('/email/logo-chiaro.png', site).href : undefined;
-  const [customerEmailSent] = await Promise.all([
-    sendCustomerEmail(order, logoUrl),
-    sendWhatsApp(orderWhatsApp(order), `#${order.number}`),
+  // 2) Comanda ad Aldo (email + WhatsApp): canale di riserva, l'ordine è già valido e visibile nel pannello.
+  //    Se falliscono l'errore va nei log e basta.
+  const order: PlacedOrder = { cart, mode, slot, pay, customer, privacy, number: saved.number, lines: totals.lines, fee: totals.fee, total: totals.total };
+  await Promise.all([
+    sendOrderEmail(order).catch((err) => console.error(`[ordine] comanda #${saved.number} non inviata via email`, err)),
+    sendWhatsApp(orderWhatsApp(order), `#${saved.number}`),
   ]);
 
-  const res: OrderResponse = {
-    ok: true,
-    number: order.number,
-    lines: totals.lines,
-    subtotal: totals.subtotal,
-    fee: totals.fee,
-    total: totals.total,
-    customerEmailSent,
-  };
+  // Nessuna email al cliente adesso: parte solo quando Aldo accetta o rifiuta
+  const res: OrderResponse = { ok: true, number: saved.number, code: saved.code };
   return json(res);
 };
-

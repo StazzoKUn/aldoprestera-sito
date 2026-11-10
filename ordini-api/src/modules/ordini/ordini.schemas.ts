@@ -5,6 +5,7 @@
 import { z } from "zod";
 import { paginationQuery } from "../../lib/pagination.js";
 import { idSchema, importoSchema } from "../../lib/schemas.js";
+import { MOTIVI_RIFIUTO } from "./ordini.motivi.js";
 import { STATI } from "./ordini.stato.js";
 
 const rigaInput = z.strictObject({
@@ -38,6 +39,16 @@ export const ordineCreateSchema = z.strictObject({
   cliente_id: idBody,
   indirizzo_spedizione_id: idBody.nullish(),
   indirizzo_fatturazione_id: idBody.nullish(),
+  // Il sito crea direttamente in "ricevuto"; "bozza" resta possibile ma non è usata
+  stato: z.enum(["bozza", "ricevuto"]).default("ricevuto"),
+  // Dati salvati sull'ordine (il pannello legge questi, non quelli di cliente)
+  modalita: z.enum(["consegna", "asporto"]),
+  orario_richiesto: z.coerce.date(), // ISO 8601, calcolato dal server del sito
+  metodo_pagamento: z.string().trim().min(1).max(32),
+  nome_cliente: z.string().trim().min(1).max(150),
+  telefono_cliente: z.string().trim().min(1).max(32),
+  citofono: z.string().trim().max(80).nullish(),
+  // Solo note del cliente
   note: z.string().trim().max(65535).nullish(),
   // Consegna in euro (0 = ritiro): il totale dell'ordine è righe + consegna
   costo_consegna: importoSchema.default("0"),
@@ -57,9 +68,17 @@ export const ordineUpdateSchema = z
 // PUT /ordini/:id/righe — solo in bozza: sostituisce tutte le righe
 export const righeUpdateSchema = z.strictObject({ righe: righeInput });
 
-export const statoUpdateSchema = z.strictObject({
-  stato: z.enum(STATI, { message: `stato non valido: ammessi ${STATI.join(", ")}` }),
-});
+export const statoUpdateSchema = z
+  .strictObject({
+    stato: z.enum(STATI, { message: `stato non valido: ammessi ${STATI.join(", ")}` }),
+    motivo: z.enum(MOTIVI_RIFIUTO, { message: "motivo di rifiuto non valido" }).optional(),
+  })
+  .superRefine((v, ctx) => {
+    if (v.stato === "rifiutato" && !v.motivo) ctx.addIssue({ code: "custom", path: ["motivo"], message: "il rifiuto richiede un motivo" });
+    if (v.stato !== "rifiutato" && v.motivo) ctx.addIssue({ code: "custom", path: ["motivo"], message: "il motivo si indica solo per il rifiuto" });
+  });
+
+export const codicePubblicoParams = z.object({ codice: z.string().regex(/^[A-Za-z0-9_-]{16,32}$/, "codice non valido") });
 
 export const ordiniListQuery = paginationQuery.extend({
   cliente_id: idSchema.optional(),

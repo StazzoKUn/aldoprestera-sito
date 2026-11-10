@@ -1,0 +1,27 @@
+---
+import { getImage } from 'astro:assets';
+import Layout from '../../layouts/Layout.astro';
+import GestioneLogin from '../../components/gestione/GestioneLogin';
+import { site } from '../../data/site';
+import { currentUser } from '../../lib/gestione';
+import logoChiaro from '../../assets/logo-chiaro.png';
+import '../../styles/gestione.css';
+
+// Area riservata: mai in cache, mai indicizzata
+export const prerender = false;
+Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+Astro.response.headers.set('Cache-Control', 'no-store');
+
+// Già collegato: vai direttamente al pannello
+try {
+  if (await currentUser(Astro.cookies)) return Astro.redirect('/gestione');
+} catch (err) {
+  console.error('[gestione] verifica sessione', err);
+}
+
+const logo = await getImage({ src: logoChiaro, width: 440, format: 'png' });
+---
+
+<Layout title={`Accesso · ${site.name}`} bg="ink" noindex>
+  <GestioneLogin client:load logo={logo.src} />
+</Layout>

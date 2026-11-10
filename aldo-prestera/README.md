@@ -26,7 +26,6 @@ Senza SMTP, in sviluppo l'ordine viene stampato nella console del server; in pro
 | `src/data/menu.ts` | Menù tipizzato (categorie → voci) |
 | `src/data/site.ts` | Telefono, indirizzo, P.IVA, orari, social, coordinate mappa, orari ordini |
 | `src/lib/slots.ts` | Slot da 15' ricavati da giorni di apertura, primo/ultimo slot e anticipo minimo |
-| `docs/TODO-ordering-system.md` | Fase 2 (tracking stile Glovo) — non iniziata |
 
 ## Dati segnaposto da sostituire
 

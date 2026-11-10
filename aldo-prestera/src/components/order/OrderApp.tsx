@@ -3,7 +3,6 @@ import type { MenuCategory } from '../../data/menu';
 import { eur, countTxt } from '../../lib/format';
 import { delivery } from '../../data/site';
 import {
-  PAYS,
   computeTotals,
   minOrderTxt,
   validateOrder,
@@ -11,7 +10,6 @@ import {
   type Customer,
   type FieldErrors,
   type Mode,
-  type OrderLine,
   type OrderResponse,
   type Pay,
 } from '../../lib/order';
@@ -30,18 +28,17 @@ interface Props {
   phoneHref: string;
 }
 
-type Step = 'menu' | 'dati' | 'conferma';
+type Step = 'menu' | 'dati';
 
-interface Confirmation extends OrderResponse {
-  mode: Mode;
-  slot: string;
-  pay: Pay;
-  email: string;
+/** Ordine in attesa ritrovato dal codice salvato nel browser */
+interface Pending {
+  code: string;
+  number: string;
 }
 
 const LS_CART = 'aldo:cart';
 const LS_MODE = 'aldo:mode';
-const SS_DONE = 'aldo:confirmation';
+const LS_WAIT = 'aldo:attesa'; // codice pubblico dell'ordine in attesa (vedi pagina /ordine/<codice>)
 
 const emptyCustomer: Customer = {
   name: '',
@@ -79,13 +76,13 @@ export default function OrderApp({ menu, images, logo, phone, phoneHref }: Props
   const [mode, setMode] = useState<Mode>('consegna');
   const [step, setStepState] = useState<Step>('menu');
   const [slot, setSlot] = useState('');
-  const [pay, setPay] = useState<Pay>('Contanti');
+  const pay: Pay = 'Contanti'; // solo contanti: nessuna scelta
   const [customer, setCustomer] = useState<Customer>(emptyCustomer);
   const [privacy, setPrivacy] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState('');
-  const [done, setDone] = useState<Confirmation | null>(null);
+  const [pending, setPending] = useState<Pending | null>(null);
   const [hydrated, setHydrated] = useState(false);
   /** null = in caricamento */
   const [slots, setSlots] = useState<string[] | null>(null);
@@ -103,15 +100,29 @@ export default function OrderApp({ menu, images, logo, phone, phoneHref }: Props
     }
     const savedMode = read<Mode>(localStorage, LS_MODE);
     if (savedMode === 'consegna' || savedMode === 'asporto') setMode(savedMode);
-    const savedDone = read<Confirmation>(sessionStorage, SS_DONE);
     const params = new URLSearchParams(location.search);
-    if (params.get('passo') === 'conferma' && savedDone) {
-      setDone(savedDone);
-      setStepState('conferma');
-    } else if (params.get('passo') === 'dati' && savedCart && Object.keys(savedCart).length) {
+    if (params.get('passo') === 'dati' && savedCart && Object.keys(savedCart).length) {
       setStepState('dati');
     }
     setHydrated(true);
+
+    // Il cliente ritrova l'ordine in attesa riaprendo il sito
+    const code = read<string>(localStorage, LS_WAIT);
+    if (code) {
+      fetch(`/api/ordine/stato/${encodeURIComponent(code)}`)
+        .then(async (res) => {
+          if (res.status === 404) return write(localStorage, LS_WAIT, null);
+          const data = await res.json();
+          if (data?.ok && (data.ordine.stato === 'ricevuto' || data.ordine.stato === 'accettato')) {
+            setPending({ code, number: data.ordine.numero_ordine });
+          } else if (data?.ok) {
+            write(localStorage, LS_WAIT, null); // ordine concluso
+          }
+        })
+        .catch(() => {
+          /* niente rete: il banner non compare */
+        });
+    }
   }, []);
 
   useEffect(() => {
@@ -131,11 +142,11 @@ export default function OrderApp({ menu, images, logo, phone, phoneHref }: Props
   useEffect(() => {
     const onPop = () => {
       const p = new URLSearchParams(location.search).get('passo');
-      setStepState(p === 'dati' ? 'dati' : p === 'conferma' && done ? 'conferma' : 'menu');
+      setStepState(p === 'dati' ? 'dati' : 'menu');
     };
     addEventListener('popstate', onPop);
     return () => removeEventListener('popstate', onPop);
-  }, [done]);
+  }, []);
 
   const totals = computeTotals(cart, mode, menu, customer.zone);
   const isC = mode === 'consegna';
@@ -207,6 +218,7 @@ export default function OrderApp({ menu, images, logo, phone, phoneHref }: Props
       return;
     }
     setSending(true);
+    let sent = false;
     try {
       const res = await fetch('/api/ordine', {
         method: 'POST',
@@ -219,13 +231,13 @@ export default function OrderApp({ menu, images, logo, phone, phoneHref }: Props
         if (data?.fields?.slot) setSlotsReload((n) => n + 1);
         throw new Error(data?.error || 'Errore di invio');
       }
-      const conf: Confirmation = { ...(data as OrderResponse), mode, slot, pay, email: customer.email.trim() };
-      write(sessionStorage, SS_DONE, conf);
-      setDone(conf);
+      const { code } = data as OrderResponse;
+      write(localStorage, LS_WAIT, code);
       setCart({});
-      setCustomer(emptyCustomer);
-      setPrivacy(false);
-      setStep('conferma', true);
+      write(localStorage, LS_CART, {});
+      // Pagina di attesa: l'ordine è già salvato, la pizzeria deve solo rispondere
+      sent = true; // il pulsante resta bloccato finché il browser cambia pagina: niente doppio invio
+      location.assign(`/ordine/${encodeURIComponent(code)}`);
     } catch (err) {
       setSendError(
         err instanceof Error && err.message !== 'Errore di invio' && err.message !== 'Failed to fetch'
@@ -233,58 +245,16 @@ export default function OrderApp({ menu, images, logo, phone, phoneHref }: Props
           : `Non siamo riusciti a inviare l'ordine. Riprova o chiamaci al ${phone}.`,
       );
     } finally {
-      setSending(false);
+      if (!sent) setSending(false);
     }
   };
 
-  /* ---------- Passo 3 · Conferma ---------- */
-  if (step === 'conferma' && done) {
-    const confIsC = done.mode === 'consegna';
-    return (
-      <div class="o-confirm">
-        <div class="o-confirm__body">
-          <a href="/" aria-label="Torna al sito">
-            <img src={logo.large} alt="Aldo Prestera Pizzeria" class="o-confirm__logo" width={220} />
-          </a>
-          <div class="o-confirm__check" aria-hidden="true">✓</div>
-          <h1>Ordine ricevuto</h1>
-          <p>
-            Ti chiamiamo per confermare. {confIsC ? `Consegna alle ${done.slot}.` : `Pronta alle ${done.slot}.`}
-            {done.customerEmailSent && done.email && (
-              <>
-                <br />
-                Riepilogo inviato a {done.email}.
-              </>
-            )}
-          </p>
-          <div class="o-confirm__recap">
-            <div class="o-confirm__meta">
-              <span>Ordine n. {done.number}</span>
-              <span>ore {done.slot}</span>
-            </div>
-            {done.lines.map((l) => (
-              <QtyLine l={l} />
-            ))}
-            {done.fee > 0 && (
-              <div class="o-qline">
-                <span>Consegna</span>
-                <span>{eur(done.fee)}</span>
-              </div>
-            )}
-            <div class="o-confirm__total">
-              <span>Totale · {done.pay === 'Contanti' ? 'contanti' : 'carta'}</span>
-              <span>{eur(done.total)}</span>
-            </div>
-          </div>
-        </div>
-        <div class="o-confirm__actions">
-          <a href={phoneHref} class="o-btn-outline">
-            Chiama la pizzeria
-          </a>
-        </div>
-      </div>
-    );
-  }
+  const pendingBanner = pending && (
+    <a class="o-pending" href={`/ordine/${encodeURIComponent(pending.code)}`}>
+      <span>Hai un ordine in corso (n. {pending.number})</span>
+      <span class="o-pending__go">Guarda lo stato →</span>
+    </a>
+  );
 
   const header = (
     <header class="o-header">
@@ -384,7 +354,7 @@ export default function OrderApp({ menu, images, logo, phone, phoneHref }: Props
             {sendError}
           </p>
         )}
-        <span class="o-cart__note">Paghi alla consegna · contanti o carta</span>
+        <span class="o-cart__note">Paghi in contanti alla consegna</span>
       </div>
     </aside>
   );
@@ -394,6 +364,7 @@ export default function OrderApp({ menu, images, logo, phone, phoneHref }: Props
     return (
       <div class="o-page">
         {header}
+        {pendingBanner}
         <div class="o-layout">
           <form id="o-form" class="o-form" onSubmit={submit} noValidate>
             <h1>I tuoi dati</h1>
@@ -403,7 +374,7 @@ export default function OrderApp({ menu, images, logo, phone, phoneHref }: Props
             <Field label="Telefono" error={errors.phone} id="f-phone">
               <input id="f-phone" type="tel" inputMode="tel" autocomplete="tel" required {...field('phone')} aria-invalid={!!errors.phone} />
             </Field>
-            <Field label="Email" error={errors.email} id="f-email" hint="Ti mandiamo il riepilogo dell'ordine">
+            <Field label="Email" error={errors.email} id="f-email" hint="Ti scriviamo qui quando la pizzeria risponde">
               <input id="f-email" type="email" inputMode="email" autocomplete="email" required {...field('email')} aria-invalid={!!errors.email} />
             </Field>
             {isC && (
@@ -472,17 +443,6 @@ export default function OrderApp({ menu, images, logo, phone, phoneHref }: Props
             <Field label="Note per la pizzeria" id="f-notes">
               <textarea id="f-notes" rows={2} placeholder="Es. una margherita senza basilico" {...field('notes')} />
             </Field>
-            <fieldset class="o-field">
-              <legend class="o-label">Pagamento alla consegna</legend>
-              <div class="o-chips o-chips--2">
-                {PAYS.map((p) => (
-                  <label class="o-chip" key={p}>
-                    <input type="radio" name="pay" value={p} checked={pay === p} onChange={() => setPay(p)} />
-                    <span>{p}</span>
-                  </label>
-                ))}
-              </div>
-            </fieldset>
             <div class="o-field">
               <label class="o-check">
                 <input
@@ -534,6 +494,7 @@ export default function OrderApp({ menu, images, logo, phone, phoneHref }: Props
   return (
     <div class="o-page">
       {header}
+      {pendingBanner}
       <div class="o-layout">
         <div class="o-menu">
           <div class="o-menu__top">
@@ -677,17 +638,6 @@ function Field(p: { label: string; id: string; error?: string; hint?: string; ch
       {p.children}
       {p.hint && !p.error && <span class="o-hint">{p.hint}</span>}
       {p.error && <span class="o-error">{p.error}</span>}
-    </div>
-  );
-}
-
-function QtyLine({ l }: { l: OrderLine }) {
-  return (
-    <div class="o-qline">
-      <span>
-        <b>{l.qty}×</b> {l.name}
-      </span>
-      <span>{eur(l.total)}</span>
     </div>
   );
 }

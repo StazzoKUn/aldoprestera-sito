@@ -7,9 +7,9 @@ Lingua: comunica, scrivi commenti, commit e documentazione in **italiano**.
 
 | Cartella | Cosa | Istruzioni dettagliate |
 | --- | --- | --- |
-| `aldo-prestera/` | Sito one page in Astro + isola Preact per gli ordini, endpoint Node in `src/pages/api/` | **`aldo-prestera/CLAUDE.md`** (leggilo prima di toccare il sito) e `README.md` |
+| `aldo-prestera/` | Sito one page in Astro + isola Preact per gli ordini, endpoint Node in `src/pages/api/` | **`aldo-prestera/CLAUDE.md`** (leggilo prima di toccare il sito: contiene anche le decisioni sull'area ordini/gestione) e `README.md` |
 | `aldo-prestera/whatsapp-bot/` | Servizio separato che inoltra le comande su WhatsApp (whatsapp-web.js) | `aldo-prestera/whatsapp-bot/README.md` |
-| `ordini-api/` | Backend ordini: Express 5 + Prisma 7 + MariaDB (XAMPP), moduli prodotti/clienti/indirizzi/ordini | questo file; esempi di chiamate in `ordini-api/requests.http` |
+| `ordini-api/` | Backend ordini: Express 5 + Prisma 7 + MariaDB (XAMPP), moduli prodotti/clienti/indirizzi/ordini (+ accesso e gestione: Fase 2) | questo file; esempi di chiamate in `ordini-api/requests.http` |
 | `_mockup/`, `_handoff/` | Mockup grafico di riferimento (il sito lo segue 1:1) | `_handoff/design_handoff_aldo_prestera_astro/README.md` |
 
 ## Rimettere in piedi tutto su un PC nuovo
@@ -25,12 +25,12 @@ Cosa NON è nella repo (vedi `.gitignore`) e va ricreato a mano:
 
 ```bash
 cd aldo-prestera
-cp .env.example .env    # senza SMTP, in sviluppo l'ordine viene stampato in console
+cp .env.example .env    # senza SMTP, in sviluppo l'ordine viene stampato in console. Aggiungi ORDINI_API_TOKEN (stesso valore di ordini-api/.env, almeno 16 caratteri casuali)
 npm install
 npm run dev             # http://localhost:4321
 ```
 
-In alternativa usa il preview integrato: configurazione `aldo-dev` in `.claude/launch.json` (non avviare il dev server con Bash).
+In alternativa usa il preview integrato: configurazione `aldo-dev` in `.claude/launch.json` (non avviare il dev server con Bash). Il `.env` del sito può avere un SMTP vero: per le prove usa `aldo-dev-prova` (porta 4322, non invia nulla). Un solo dev server Astro per volta.
 Prima di ogni consegna `npm run build` deve passare senza errori.
 
 ### 2. Bot WhatsApp (`aldo-prestera/whatsapp-bot/`) — facoltativo
@@ -52,12 +52,13 @@ Se il bot è spento il sito funziona comunque (le comande partono solo via email
 
 ```bash
 cd ordini-api
-cp .env.example .env    # DATABASE_URL="mysql://root@localhost:3306/aldop" (root XAMPP senza password)
+cp .env.example .env    # DATABASE_URL="mysql://root@localhost:3306/aldop" (root XAMPP senza password) + ORDINI_API_TOKEN (obbligatorio, uguale a quello del sito)
 npm install
 npm run prisma:generate # genera il client in src/generated/prisma
 npm run db:check        # verifica connessione e permessi
 npm run db:migrate      # applica le migration in prisma/migrations
-npm run db:seed         # carica i prodotti di prisma/seed/
+npm run db:seed         # carica i prodotti di prisma/seed/ (ATTENZIONE: svuota menù e ordini)
+npm run admin:dev       # solo sviluppo: account di prova per /gestione (credenziali in scripts/admin-dev.ts)
 npm run dev             # http://localhost:3000
 ```
 
