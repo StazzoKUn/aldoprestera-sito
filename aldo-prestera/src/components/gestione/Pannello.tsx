@@ -4,7 +4,7 @@ import { eur } from '../../lib/format';
 import { MOTIVI_RIFIUTO } from '../../lib/motivi';
 import type { Scheda } from '../../lib/gestione';
 
-// Pannello di Aldo (/gestione): tre liste che si aggiornano ogni 10 secondi, suono finché ci sono
+// Pannello di Aldo (/gestione): tre liste che si aggiornano ogni 3 secondi, suono finché ci sono
 // ordini da accettare, azioni con un tocco e storico. Parla solo con /api/gestione/*.
 
 type Card = Scheda & { email_non_inviata: boolean };
@@ -20,7 +20,7 @@ interface Props {
   logo: { src: string; srcset: string };
 }
 
-const POLL_MS = 10_000;
+const POLL_MS = 3_000;
 const BEEP_EVERY_MS = 4_000;
 const UNDO_MS = 6_000;
 
@@ -98,6 +98,7 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
 
 function OrderCard(p: {
   o: Card;
+  i?: number;
   busy: boolean;
   onAccept?: () => void;
   onReject?: () => void;
@@ -106,8 +107,12 @@ function OrderCard(p: {
   const { o } = p;
   const isC = o.modalita === 'consegna';
   const decided = o.stato === 'accettato' || o.stato === 'rifiutato';
+  // Gli ordini chiusi si ripiegano per occupare meno spazio: restano visibili orario, nome e totale
+  const closed = o.stato === 'consegnato' || o.stato === 'rifiutato' || o.stato === 'annullato';
+  const [open, setOpen] = useState(false);
+  const folded = closed && !open;
   return (
-    <article class={`g-card g-card--${o.stato}`} aria-label={`Ordine ${o.numero_ordine}`}>
+    <article class={`g-card g-card--${o.stato}`} style={{ '--i': Math.min(p.i ?? 0, 8) }} aria-label={`Ordine ${o.numero_ordine}`}>
       <header class="g-card__head">
         <span class="g-card__time">{hhmm(o.orario_richiesto)}</span>
         <span class={`g-tag g-tag--${isC ? 'consegna' : 'ritiro'}`}>{isC ? 'Consegna' : 'Ritiro'}</span>
@@ -115,8 +120,18 @@ function OrderCard(p: {
         <span class={`g-status g-status--${o.stato}${o.scaduto ? ' is-scaduto' : ''}`}>{statoLabel(o)}</span>
       </header>
 
+      {closed && (
+        <button type="button" class="g-card__toggle" aria-expanded={open} onClick={() => setOpen(!open)}>
+          <span class="g-card__toggle-name">{o.nome_cliente}</span>
+          <span>{eur(o.totale)}</span>
+          <span class="g-card__chev" aria-hidden="true" />
+          <span class="g-sr">{open ? 'Chiudi dettagli' : 'Mostra dettagli'}</span>
+        </button>
+      )}
+      <div class={`g-card__fold${closed ? ' is-foldable' : ''}${folded ? '' : ' is-open'}`}>
+        <div class="g-card__foldin">
       <div class="g-card__who">
-        <strong>{o.nome_cliente}</strong>
+        {!closed && <strong>{o.nome_cliente}</strong>}
         <span>Paga in contanti</span>
       </div>
       {isC && (
@@ -166,6 +181,8 @@ function OrderCard(p: {
         <a class={`g-btn ${o.email_non_inviata && decided ? 'g-btn--call-alert' : 'g-btn--ghost'}`} href={telHref(o.telefono_cliente)}>
           Chiama
         </a>
+      </div>
+        </div>
       </div>
     </article>
   );
@@ -257,8 +274,8 @@ function Storico({ busy, tick }: { busy: boolean; tick: number }) {
       )}
       {state === 'ok' && <p class="g-history__count">{total === 1 ? '1 ordine' : `${total} ordini`}</p>}
       <div class="g-history__list">
-        {rows.map((o) => (
-          <OrderCard key={o.id} o={o} busy={busy} />
+        {rows.map((o, i) => (
+          <OrderCard key={o.id} o={o} i={i} busy={busy} />
         ))}
         {state === 'ok' && rows.length === 0 && <p class="g-empty">Nessun ordine trovato.</p>}
       </div>
@@ -300,18 +317,32 @@ export default function Pannello({ userName, logo }: Props) {
 
   const pending = lists?.da_accettare.length ?? 0;
 
+  const inFlight = useRef(false);
+  const signature = useRef('');
   const reload = useCallback(async () => {
-    const res = await api('/api/gestione/ordini');
-    if (res.ok && res.data) {
-      setLists({ da_accettare: res.data.da_accettare, in_corso: res.data.in_corso, chiusi_oggi: res.data.chiusi_oggi });
-      setOffline(false);
-      setTick((n) => n + 1);
-    } else {
-      setOffline(true); // avviso rosso finché non torna la connessione
+    if (inFlight.current) return; // con il controllo frequente non si sovrappongono le richieste
+    inFlight.current = true;
+    try {
+      const res = await api('/api/gestione/ordini');
+      if (res.ok && res.data) {
+        const next: Lists = { da_accettare: res.data.da_accettare, in_corso: res.data.in_corso, chiusi_oggi: res.data.chiusi_oggi };
+        setOffline(false);
+        // aggiorna solo se è cambiato qualcosa (ordini, stati, email): niente ridisegni né richieste inutili allo storico
+        const sig = JSON.stringify(next);
+        if (sig !== signature.current) {
+          signature.current = sig;
+          setLists(next);
+          setTick((n) => n + 1);
+        }
+      } else {
+        setOffline(true); // avviso rosso finché non torna la connessione
+      }
+    } finally {
+      inFlight.current = false;
     }
   }, []);
 
-  // Aggiornamento ogni 10 secondi (e subito all'avvio)
+  // Aggiornamento ogni 3 secondi (e subito all'avvio)
   useEffect(() => {
     if (!started) return;
     reload();
@@ -407,13 +438,14 @@ export default function Pannello({ userName, logo }: Props) {
   ];
 
   const column = (id: Tab, title: string, items: Card[] | undefined, empty: string) => (
-    <section class={`g-col${tab === id ? ' is-active' : ''}`} aria-labelledby={`g-col-${id}`}>
+    <section class={`g-col g-col--${id}${tab === id ? ' is-active' : ''}`} aria-labelledby={`g-col-${id}`}>
       <h2 id={`g-col-${id}`} class="g-col__title">
         {title} <span class="g-col__n">{items?.length ?? 0}</span>
       </h2>
-      {items?.map((o) => (
+      {items?.map((o, i) => (
         <OrderCard
           key={o.id}
+          i={i}
           o={o}
           busy={busyId === o.id}
           onAccept={() => setStato(o, 'accettato')}
@@ -454,6 +486,7 @@ export default function Pannello({ userName, logo }: Props) {
       )}
       <header class="g-header">
         <img src={logo.src} srcset={logo.srcset} alt="Aldo Prestera Pizzeria" height={40} />
+        <span class="g-live">In servizio</span>
         <div class="g-seg" role="group" aria-label="Vista">
           <button aria-pressed={view === 'oggi'} onClick={() => setView('oggi')}>
             Oggi

@@ -13,7 +13,7 @@ interface Lista {
 }
 
 /**
- * GET: le tre liste del pannello (aggiornate ogni 10 s dal browser).
+ * GET: le tre liste del pannello (aggiornate ogni 3 s dal browser).
  * L'API applica la scadenza dei 15 minuti: per gli ordini scaduti proprio ora parte qui l'email di rifiuto.
  */
 export const GET: APIRoute = (ctx) =>

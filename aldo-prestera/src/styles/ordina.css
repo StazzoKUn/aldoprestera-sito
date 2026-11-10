@@ -111,15 +111,44 @@
 }
 
 /* Pillole categorie */
-.o-pills {
+.o-pills-wrap {
   position: sticky;
   top: 0;
   z-index: 5;
+  margin: -12px 0;
+  background: var(--paper);
+  min-width: 0;
+}
+.o-pills-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 24px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+.o-pills-arrow:hover {
+  background: var(--red);
+}
+.o-pills-arrow--l {
+  left: 0;
+}
+.o-pills-arrow--r {
+  right: 0;
+}
+.o-pills {
   display: flex;
   gap: 10px;
-  margin: -12px 0;
   padding: 12px 0;
-  background: var(--paper);
   font-size: 13px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -230,39 +259,145 @@
 .o-stepper {
   display: flex;
   align-items: center;
+  gap: 2px;
+  padding: 4px;
   border-radius: 40px;
   background: var(--ink);
   color: #fff;
-  overflow: hidden;
   flex: none;
 }
 .o-stepper button {
-  width: 36px;
-  height: 40px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 18px;
+  line-height: 1;
+  transition: background-color 0.15s;
+}
+.o-stepper button:hover {
+  background: rgba(255, 255, 255, 0.14);
 }
 .o-stepper span {
-  width: 18px;
+  min-width: 36px;
+  padding: 0 6px;
   text-align: center;
   font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 .o-stepper .o-stepper__add {
   background: var(--red);
 }
+.o-stepper .o-stepper__add:hover {
+  background: #a01f26;
+}
 .o-stepper--big {
-  height: 52px;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
 }
 .o-stepper--big button {
-  width: 52px;
-  height: 52px;
+  width: 44px;
+  height: 44px;
   font-size: 20px;
 }
 .o-stepper--big span {
-  width: 28px;
+  min-width: 44px;
   font-size: 17px;
+}
+
+/* Ricerca nel menù */
+.o-search {
+  position: relative;
+  max-width: 520px;
+  color: var(--text);
+}
+.o-search__ico {
+  position: absolute;
+  left: 18px;
+  top: 16px;
+  color: var(--muted);
+  pointer-events: none;
+}
+.o-search__input {
+  width: 100%;
+  min-height: 50px;
+  padding: 0 44px 0 46px;
+  border: 1px solid var(--border-2);
+  border-radius: 40px;
+  background: var(--white);
+  font: inherit;
+  font-size: 16px;
+  color: var(--text);
+}
+.o-search__input::-webkit-search-cancel-button {
+  display: none;
+}
+.o-search__input:focus {
+  outline: none;
+  border-color: var(--text);
+}
+.o-search__clear {
+  position: absolute;
+  right: 6px;
+  top: 5px;
+  width: 40px;
+  height: 40px;
+  font-size: 22px;
+  color: var(--muted);
+}
+.o-search__list {
+  position: absolute;
+  z-index: 8;
+  left: 0;
+  right: 0;
+  top: calc(100% + 6px);
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  background: var(--white);
+  border: 1px solid var(--border-2);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.14);
+}
+.o-search__list button {
+  width: 100%;
+  min-height: 48px;
+  padding: 8px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+}
+.o-search__list button:hover,
+.o-search__list button.is-hi {
+  background: var(--paper);
+}
+.o-search__name {
+  font-family: var(--serif);
+  font-size: 20px;
+  font-weight: 600;
+}
+.o-search__meta {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.o-search__none {
+  padding: 14px;
+  font-size: 14px;
+  color: var(--muted);
+}
+.o-card,
+.o-row {
+  scroll-margin-top: 110px;
+}
+@keyframes o-found {
+  0%, 60% { box-shadow: 0 0 0 3px var(--red); background-color: rgba(184, 38, 45, 0.08); }
+  100% { box-shadow: 0 0 0 3px transparent; background-color: transparent; }
+}
+.is-found {
+  animation: o-found 2.2s ease-out;
 }
 
 /* Righe classiche / bevande */
@@ -458,9 +593,100 @@
 .o-form {
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  max-width: 620px;
+  gap: 20px;
+  max-width: 760px;
   min-width: 0;
+}
+.o-recap {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  padding: 14px 18px;
+  border: 1px solid var(--border-2);
+  background: var(--white);
+  font-size: 15px;
+}
+.o-recap__txt {
+  display: flex;
+  flex-direction: column;
+}
+.o-recap__label {
+  font-size: 11px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--red);
+  font-weight: 500;
+}
+.o-recap__edit,
+.o-cart__edit {
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid var(--text);
+  border-radius: 40px;
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+.o-recap__edit:hover {
+  background: var(--text);
+  color: var(--paper);
+}
+.o-cart__edit {
+  margin: 14px 28px 0;
+  border-color: rgba(242, 239, 233, 0.35);
+  color: var(--on-dark);
+}
+.o-cart__edit:hover {
+  background: var(--on-dark);
+  color: var(--ink);
+}
+.o-sec {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 28px;
+  background: var(--white);
+  border: 1px solid var(--border);
+}
+.o-sec__title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--sans);
+  font-style: normal;
+  font-size: 12px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--text);
+  font-weight: 500;
+}
+.o-sec__title span {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--red);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0;
+  font-size: 13px;
+}
+.o-grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+.o-sec .o-field input:not([type='checkbox']),
+.o-sec .o-field select,
+.o-sec .o-field textarea {
+  background: var(--paper);
+}
+.o-privacy {
+  padding: 0 4px;
 }
 .o-form h1 {
   margin-bottom: 4px;
@@ -848,8 +1074,20 @@ body:has(.o-confirm) {
   .o-seg button {
     padding: 12px;
   }
-  .o-pills {
+  .o-pills-wrap {
     margin: 0;
+  }
+  .o-search {
+    margin: 16px 20px 0;
+    max-width: none;
+  }
+  .o-sec {
+    padding: 20px 16px;
+  }
+  .o-grid2 {
+    grid-template-columns: 1fr;
+  }
+  .o-pills {
     padding: 16px 20px 12px;
     gap: 8px;
     font-size: 12px;
@@ -893,10 +1131,10 @@ body:has(.o-confirm) {
     font-size: 26px;
   }
   .o-stepper--big button {
-    width: 48px;
+    width: 44px;
   }
   .o-stepper--big span {
-    width: 22px;
+    min-width: 38px;
   }
   .o-card__body {
     padding: 14px 16px 18px;
@@ -934,8 +1172,8 @@ body:has(.o-confirm) {
     height: 44px;
   }
   .o-stepper button {
-    width: 40px;
-    height: 44px;
+    width: 38px;
+    height: 38px;
   }
 
   /* Barra carrello flottante */

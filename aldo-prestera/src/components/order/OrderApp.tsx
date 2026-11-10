@@ -302,6 +302,11 @@ export default function OrderApp({ menu, images, logo, phone, phoneHref }: Props
         <h2>Il tuo ordine</h2>
         <span aria-live="polite">{countTxt(totals.count)}</span>
       </div>
+      {step === 'dati' && (
+        <button type="button" class="o-cart__edit" onClick={() => setStep('menu')}>
+          ← Modifica ordine
+        </button>
+      )}
       <div class="o-cart__lines">
         {totals.lines.map((l) => {
           const img = images[l.id];
@@ -341,11 +346,11 @@ export default function OrderApp({ menu, images, logo, phone, phoneHref }: Props
       </div>
       <div class="o-cart__foot">
         {step === 'menu' ? (
-          <button type="button" class="o-cta" onClick={goToData} disabled={!canContinue}>
+          <button key="continua" type="button" class="o-cta" onClick={goToData} disabled={!canContinue}>
             Continua
           </button>
         ) : (
-          <button type="submit" form="o-form" class="o-cta" disabled={sending}>
+          <button key="invia" type="submit" form="o-form" class="o-cta" disabled={sending}>
             {sending ? 'Invio in corso…' : 'Invia ordine'}
           </button>
         )}
@@ -368,17 +373,40 @@ export default function OrderApp({ menu, images, logo, phone, phoneHref }: Props
         <div class="o-layout">
           <form id="o-form" class="o-form" onSubmit={submit} noValidate>
             <h1>I tuoi dati</h1>
-            <Field label="Nome e cognome" error={errors.name} id="f-name">
-              <input id="f-name" type="text" autocomplete="name" required {...field('name')} aria-invalid={!!errors.name} />
-            </Field>
-            <Field label="Telefono" error={errors.phone} id="f-phone">
-              <input id="f-phone" type="tel" inputMode="tel" autocomplete="tel" required {...field('phone')} aria-invalid={!!errors.phone} />
-            </Field>
-            <Field label="Email" error={errors.email} id="f-email" hint="Ti scriviamo qui quando la pizzeria risponde">
-              <input id="f-email" type="email" inputMode="email" autocomplete="email" required {...field('email')} aria-invalid={!!errors.email} />
-            </Field>
+            <div class="o-recap">
+              <div class="o-recap__txt">
+                <span class="o-recap__label">{isC ? 'Consegna a domicilio' : 'Ritiro in pizzeria'}</span>
+                <span>
+                  {countTxt(totals.count)} · {eur(totals.total)}
+                </span>
+              </div>
+              <button type="button" class="o-recap__edit" onClick={() => setStep('menu')}>
+                ← Modifica ordine
+              </button>
+            </div>
+
+            <section class="o-sec" aria-labelledby="s-contatti">
+              <h2 class="o-sec__title" id="s-contatti">
+                <span>1</span> I tuoi contatti
+              </h2>
+              <div class="o-grid2">
+                <Field label="Nome e cognome" error={errors.name} id="f-name">
+                  <input id="f-name" type="text" autocomplete="name" required {...field('name')} aria-invalid={!!errors.name} />
+                </Field>
+                <Field label="Telefono" error={errors.phone} id="f-phone">
+                  <input id="f-phone" type="tel" inputMode="tel" autocomplete="tel" required {...field('phone')} aria-invalid={!!errors.phone} />
+                </Field>
+              </div>
+              <Field label="Email" error={errors.email} id="f-email" hint="Ti scriviamo qui quando la pizzeria risponde">
+                <input id="f-email" type="email" inputMode="email" autocomplete="email" required {...field('email')} aria-invalid={!!errors.email} />
+              </Field>
+            </section>
+
             {isC && (
-              <>
+              <section class="o-sec" aria-labelledby="s-indirizzo">
+                <h2 class="o-sec__title" id="s-indirizzo">
+                  <span>2</span> Dove consegniamo
+                </h2>
                 {delivery.zones.length > 1 && (
                   <Field label="Comune" error={errors.zone} id="f-zone">
                     <select id="f-zone" required {...field('zone')} aria-invalid={!!errors.zone}>
@@ -409,8 +437,12 @@ export default function OrderApp({ menu, images, logo, phone, phoneHref }: Props
                 <Field label="Citofono / piano" id="f-intercom">
                   <input id="f-intercom" type="text" placeholder="Es. Rossi, 2° piano" {...field('intercom')} />
                 </Field>
-              </>
+              </section>
             )}
+            <section class="o-sec" aria-labelledby="s-orario">
+            <h2 class="o-sec__title" id="s-orario">
+              <span>{isC ? 3 : 2}</span> Quando lo vuoi
+            </h2>
             <fieldset class="o-field" id="o-slots">
               <legend class="o-label">{isC ? 'Orario di consegna' : 'Orario di ritiro'}</legend>
               {slotsFailed && !slots ? (
@@ -443,7 +475,8 @@ export default function OrderApp({ menu, images, logo, phone, phoneHref }: Props
             <Field label="Note per la pizzeria" id="f-notes">
               <textarea id="f-notes" rows={2} placeholder="Es. una margherita senza basilico" {...field('notes')} />
             </Field>
-            <div class="o-field">
+            </section>
+            <div class="o-field o-privacy">
               <label class="o-check">
                 <input
                   type="checkbox"
@@ -503,6 +536,7 @@ export default function OrderApp({ menu, images, logo, phone, phoneHref }: Props
               <ModeToggle mode={mode} setMode={setMode} />
             </div>
           </div>
+          <MenuSearch menu={menu} />
           <CategoryPills menu={menu} />
           {menu.map((cat) =>
             cat.layout === 'cards' ? (
@@ -512,7 +546,7 @@ export default function OrderApp({ menu, images, logo, phone, phoneHref }: Props
                     const img = images[it.id];
                     const q = cart[it.id] ?? 0;
                     return (
-                      <article class="o-card" key={it.id}>
+                      <article class="o-card" id={`item-${it.id}`} key={it.id}>
                         <div class="o-card__media">
                           {img && (
                             <img
@@ -555,7 +589,7 @@ export default function OrderApp({ menu, images, logo, phone, phoneHref }: Props
                   {cat.items.map((it) => {
                     const q = cart[it.id] ?? 0;
                     return (
-                      <div class="o-row" key={it.id}>
+                      <div class="o-row" id={`item-${it.id}`} key={it.id}>
                         <div class="o-row__text">
                           <h3>{it.name}</h3>
                           <span>
@@ -642,10 +676,135 @@ function Field(p: { label: string; id: string; error?: string; hint?: string; ch
   );
 }
 
+const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+/** Ricerca piatto: suggerisce mentre si scrive e porta alla voce scelta */
+function MenuSearch({ menu }: { menu: MenuCategory[] }) {
+  const [q, setQ] = useState('');
+  const [open, setOpen] = useState(false);
+  const [hi, setHi] = useState(0);
+  const all = useMemo(() => menu.flatMap((c) => c.items.map((it) => ({ it, cat: c }))), [menu]);
+  const term = norm(q.trim());
+  const results = useMemo(() => {
+    if (term.length < 2) return [];
+    const words = term.split(/\s+/);
+    const score = (n: string, d: string) => {
+      if (n.startsWith(term)) return 0;
+      if (words.every((w) => n.includes(w))) return 1;
+      if (words.every((w) => (n + ' ' + d).includes(w))) return 2;
+      return 9;
+    };
+    return all
+      .map((r) => ({ r, s: score(norm(r.it.name), norm(r.it.desc)) }))
+      .filter((x) => x.s < 9)
+      .sort((a, b) => a.s - b.s)
+      .slice(0, 6)
+      .map((x) => x.r);
+  }, [term, all]);
+
+  const pick = (id: string) => {
+    setOpen(false);
+    setQ('');
+    const el = document.getElementById(`item-${id}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.classList.remove('is-found');
+    void el.offsetWidth; // riavvia l'animazione
+    el.classList.add('is-found');
+    setTimeout(() => el.classList.remove('is-found'), 2200);
+  };
+
+  const onKey = (e: KeyboardEvent) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setHi((h) => Math.min(h + 1, results.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setHi((h) => Math.max(h - 1, 0));
+    } else if (e.key === 'Enter' && results[hi]) {
+      e.preventDefault();
+      pick(results[hi].it.id);
+    } else if (e.key === 'Escape') {
+      setOpen(false);
+    }
+  };
+
+  const showList = open && term.length >= 2;
+  return (
+    <div class="o-search" role="search">
+      <svg class="o-search__ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+        <circle cx="11" cy="11" r="7" />
+        <path d="M20 20l-3.5-3.5" />
+      </svg>
+      <input
+        type="search"
+        class="o-search__input"
+        placeholder="Cerca una pizza, una bevanda…"
+        aria-label="Cerca nel menù"
+        role="combobox"
+        aria-expanded={showList}
+        aria-controls="o-search-list"
+        autocomplete="off"
+        value={q}
+        onInput={(e) => {
+          setQ((e.currentTarget as HTMLInputElement).value);
+          setOpen(true);
+          setHi(0);
+        }}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
+        onKeyDown={onKey}
+      />
+      {q && (
+        <button type="button" class="o-search__clear" aria-label="Cancella ricerca" onClick={() => setQ('')}>
+          ×
+        </button>
+      )}
+      {showList && (
+        <ul class="o-search__list" id="o-search-list" role="listbox">
+          {results.length === 0 ? (
+            <li class="o-search__none">Nessun risultato per «{q.trim()}»</li>
+          ) : (
+            results.map((r, i) => (
+              <li key={r.it.id} role="option" aria-selected={i === hi}>
+                <button type="button" class={i === hi ? 'is-hi' : ''} onMouseDown={(e) => e.preventDefault()} onClick={() => pick(r.it.id)}>
+                  <span class="o-search__name">{r.it.name}</span>
+                  <span class="o-search__meta">
+                    {r.cat.name} · {eur(r.it.price)}
+                  </span>
+                </button>
+              </li>
+            ))
+          )}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 /** Pillole categorie: scorrono alla sezione e si evidenziano in base allo scroll */
 function CategoryPills({ menu }: { menu: MenuCategory[] }) {
   const [active, setActive] = useState(menu[0]?.id);
   const lock = useRef(0);
+  const rail = useRef<HTMLElement>(null);
+  const [edge, setEdge] = useState({ l: false, r: false });
+
+  const measure = () => {
+    const el = rail.current;
+    if (el) setEdge({ l: el.scrollLeft > 4, r: el.scrollLeft + el.clientWidth < el.scrollWidth - 4 });
+  };
+  useEffect(() => {
+    measure();
+    addEventListener('resize', measure);
+    return () => removeEventListener('resize', measure);
+  }, [menu]);
+  // la pillola attiva resta visibile nella barra
+  useEffect(() => {
+    const el = rail.current;
+    const btn = el?.querySelector<HTMLElement>('.is-active');
+    if (el && btn) el.scrollTo({ left: btn.offsetLeft - el.clientWidth / 2 + btn.offsetWidth / 2, behavior: 'smooth' });
+  }, [active]);
+  const nudge = (dir: number) => rail.current?.scrollBy({ left: dir * rail.current.clientWidth * 0.7, behavior: 'smooth' });
   useEffect(() => {
     const obs = new IntersectionObserver(
       (entries) => {
@@ -669,13 +828,32 @@ function CategoryPills({ menu }: { menu: MenuCategory[] }) {
   };
 
   return (
-    <nav class="o-pills" aria-label="Categorie">
-      {menu.map((c) => (
-        <button type="button" key={c.id} class={active === c.id ? 'is-active' : ''} aria-current={active === c.id ? 'true' : undefined} onClick={() => go(c.id)}>
-          <span class="o-desk">{c.name}</span>
-          <span class="o-mob">{c.short}</span>
+    <div class="o-pills-wrap">
+      {edge.l && (
+        <button type="button" class="o-pills-arrow o-pills-arrow--l o-desk" aria-label="Categorie precedenti" onClick={() => nudge(-1)}>
+          ‹
         </button>
-      ))}
-    </nav>
+      )}
+      <nav class="o-pills" aria-label="Categorie" ref={rail} onScroll={measure} onWheel={(e) => {
+        // rotella del mouse: scorre in orizzontale anche senza trackpad
+        const el = e.currentTarget as HTMLElement;
+        if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && el.scrollWidth > el.clientWidth) {
+          el.scrollLeft += e.deltaY;
+          e.preventDefault();
+        }
+      }}>
+        {menu.map((c) => (
+          <button type="button" key={c.id} class={active === c.id ? 'is-active' : ''} aria-current={active === c.id ? 'true' : undefined} onClick={() => go(c.id)}>
+            <span class="o-desk">{c.name}</span>
+            <span class="o-mob">{c.short}</span>
+          </button>
+        ))}
+      </nav>
+      {edge.r && (
+        <button type="button" class="o-pills-arrow o-pills-arrow--r o-desk" aria-label="Altre categorie" onClick={() => nudge(1)}>
+          ›
+        </button>
+      )}
+    </div>
   );
 }
