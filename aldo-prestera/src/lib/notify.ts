@@ -1,7 +1,7 @@
 import nodemailer from 'nodemailer';
 import { fullAddress, site } from '../data/site';
 import { eur } from './format';
-import { zoneById, type Mode, type OrderLine, type OrderRequest } from './order';
+import { type Mode, type OrderLine, type OrderRequest } from './order';
 
 export interface PlacedOrder extends OrderRequest {
   number: string;
@@ -17,7 +17,7 @@ const modeTxt = (m: Mode) => (m === 'consegna' ? 'Consegna' : 'Ritiro');
 const payTxt = (_o: PlacedOrder) => 'contanti';
 const telHref = (phone: string) => 'tel:' + phone.replace(/[^\d+]/g, '');
 const addressLine = (o: PlacedOrder) => `${o.customer.street.trim()} ${o.customer.number.trim()}`;
-const zoneName = (o: PlacedOrder) => zoneById(o.customer.zone).name;
+const zoneName = (o: PlacedOrder) => o.customer.city.trim();
 const intercom = (o: PlacedOrder) => (o.customer.intercom.trim() ? ` · citofono ${o.customer.intercom.trim()}` : '');
 const mapHref = (o: PlacedOrder) =>
   `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${addressLine(o)}, ${zoneName(o)}`)}`;
@@ -120,6 +120,8 @@ export interface DecisionOrder {
   pay: string;
   /** Dove: indirizzo di consegna o "Ritiro in pizzeria: …" */
   where: string;
+  /** Pagina di stato dell'ordine (/ordine/<codice>), consultabile anche a browser chiuso */
+  statusUrl?: string;
 }
 
 export type Decision = { kind: 'accettato' } | { kind: 'rifiutato'; reason: string };
@@ -148,6 +150,7 @@ export const decisionText = (o: DecisionOrder, d: Decision) =>
     o.fee > 0 ? `Consegna  ${eur(o.fee)}` : null,
     `Totale  ${eur(o.total)}${d.kind === 'accettato' ? ` · si paga alla consegna (${payOf(o)})` : ''}`,
     '',
+    ...(o.statusUrl ? [`Segui lo stato del tuo ordine: ${o.statusUrl}`, ''] : []),
     d.kind === 'accettato' ? `Per modifiche chiamaci al ${site.phone}.` : `Per qualsiasi dubbio chiamaci al ${site.phone}.`,
     site.name,
   ]
@@ -185,7 +188,13 @@ export const decisionHtml = (o: DecisionOrder, d: Decision, logoUrl?: string) =>
   ${ok ? '<p style="margin:16px 0 0;font-size:14px;color:#bdb8b0">Si paga in contanti alla consegna.</p>' : ''}
 </td></tr>
 <tr><td style="padding-top:26px">
-  <a href="${site.phoneHref}" style="display:block;border:1px solid #5a5650;padding:15px;text-align:center;font-size:13px;letter-spacing:3px;text-transform:uppercase;color:#f2efe9;text-decoration:none">Chiama la pizzeria · ${esc(site.phone)}</a>
+  ${
+    o.statusUrl
+      ? `<a href="${esc(o.statusUrl)}" style="display:block;background:#b8262d;padding:15px;text-align:center;font-size:13px;letter-spacing:3px;text-transform:uppercase;color:#ffffff;text-decoration:none;margin-bottom:10px">Segui il tuo ordine</a>
+  <p style="margin:0 0 16px;font-size:12px;line-height:1.5;color:#8e8983;text-align:center;word-break:break-all">Puoi riaprire questa pagina quando vuoi:<br><a href="${esc(o.statusUrl)}" style="color:#bdb8b0">${esc(o.statusUrl)}</a></p>
+  `
+      : ''
+  }<a href="${site.phoneHref}" style="display:block;border:1px solid #5a5650;padding:15px;text-align:center;font-size:13px;letter-spacing:3px;text-transform:uppercase;color:#f2efe9;text-decoration:none">Chiama la pizzeria · ${esc(site.phone)}</a>
   <p style="margin:14px 0 0;font-size:12px;color:#6e6963;text-align:center">${esc(site.name)} · ${esc(fullAddress)}</p>
 </td></tr>
 </table></td></tr></table></body></html>`;

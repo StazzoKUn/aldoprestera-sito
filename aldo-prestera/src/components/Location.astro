@@ -19,7 +19,16 @@ const mapSrc = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&lay
       </div>
       <div id="orari">
         <span class="label">Orari</span>
-        <span>{site.hours.long}</span><span>{site.hours.closed}</span>
+        <dl class="week">
+          {
+            site.hours.week.map((h) => (
+              <>
+                <dt>{h.day}</dt>
+                <dd>{h.time}</dd>
+              </>
+            ))
+          }
+        </dl>
       </div>
       <div>
         <span class="label">Telefono</span>
@@ -87,6 +96,15 @@ const mapSrc = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&lay
   }
   #orari {
     scroll-margin-top: 24px;
+  }
+  .week {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 16px;
+    margin: 0;
+  }
+  .week dd {
+    margin: 0;
   }
   .cols a:hover {
     color: var(--red-hover);

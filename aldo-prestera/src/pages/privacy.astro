@@ -1,8 +1,70 @@
 ---
 import LegalPage from '../layouts/LegalPage.astro';
+import { site, fullAddress } from '../data/site';
 ---
 
 <LegalPage title="Privacy">
-  <p>Informativa sul trattamento dei dati personali: testo da fornire a cura della pizzeria.</p>
-  <p>I dati inseriti nel modulo d'ordine (nome, telefono, indirizzo, note) sono usati solo per gestire l'ordine.</p>
+  <p>
+    Informativa sul trattamento dei dati personali ai sensi degli artt. 13 e 14 del Regolamento (UE) 2016/679 (GDPR).
+  </p>
+
+  <h2>Titolare del trattamento</h2>
+  <p>
+    {site.legal.name} ({site.legal.form}), {fullAddress}<br />
+    P.IVA {site.piva} · REA {site.legal.rea}<br />
+    Telefono <a href={site.phoneHref}>{site.phone}</a> · Email <a href={`mailto:${site.email}`}>{site.email}</a> · PEC {
+      site.legal.pec
+    }
+  </p>
+
+  <h2>Quali dati raccogliamo</h2>
+  <p>
+    Quando ordini dal sito: nome, telefono, email, indirizzo di consegna e citofono (solo per la consegna), orario
+    richiesto, prodotti ordinati e note. Non raccogliamo dati di pagamento: si paga in contanti alla consegna o al
+    ritiro.
+  </p>
+
+  <h2>Perché li usiamo e su quale base</h2>
+  <ul>
+    <li>
+      <strong>Gestire il tuo ordine</strong> (accettarlo, prepararlo, consegnarlo, contattarti in caso di problemi e
+      avvisarti via email della decisione). Base giuridica: esecuzione del contratto o di misure precontrattuali
+      richieste da te (art. 6.1.b GDPR).
+    </li>
+    <li>
+      <strong>Obblighi di legge</strong>, ad esempio fiscali e contabili (art. 6.1.c GDPR).
+    </li>
+    <li>
+      <strong>Sicurezza del sito</strong> e prevenzione degli abusi, ad esempio limitando le richieste ripetute
+      (legittimo interesse, art. 6.1.f GDPR).
+    </li>
+  </ul>
+  <p>
+    Non facciamo profilazione né marketing e non prendiamo decisioni automatizzate sul tuo ordine. Fornire i dati
+    richiesti dal modulo è necessario per completare l'ordine: senza non possiamo gestirlo.
+  </p>
+
+  <h2>A chi li comunichiamo</h2>
+  <p>
+    I dati sono trattati dal titolare e dalle persone che lavorano in pizzeria. Per far funzionare il servizio ci
+    appoggiamo a fornitori che agiscono per nostro conto: il servizio di hosting del sito e dell'archivio ordini, il
+    servizio di posta elettronica con cui inviamo le email e WhatsApp, con cui la comanda arriva alla pizzeria. Non
+    vendiamo i tuoi dati e non li diffondiamo.
+  </p>
+
+  <h2>Per quanto tempo li conserviamo</h2>
+  <p>
+    Per il tempo necessario a gestire l'ordine e a rispettare gli obblighi di legge a cui siamo soggetti; poi vengono
+    cancellati o resi anonimi.
+  </p>
+
+  <h2>I tuoi diritti</h2>
+  <p>
+    Puoi chiedere in qualsiasi momento accesso, rettifica, cancellazione, limitazione od opposizione al trattamento e
+    la portabilità dei dati, scrivendo a <a href={`mailto:${site.email}`}>{site.email}</a>. Se ritieni che il
+    trattamento violi la normativa, puoi proporre reclamo al Garante per la protezione dei dati personali
+    (<a href="https://www.garanteprivacy.it" rel="noopener">garanteprivacy.it</a>).
+  </p>
+
+  <p>Per i cookie e le tecnologie simili vedi l'<a href="/cookie">informativa sui cookie</a>.</p>
 </LegalPage>

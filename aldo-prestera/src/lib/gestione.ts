@@ -37,6 +37,8 @@ export const originOk = (request: Request) => {
 export interface Scheda {
   id: string;
   numero_ordine: string;
+  /** Codice della pagina di stato /ordine/<codice>; assente se l'API è una versione vecchia */
+  codice_pubblico?: string;
   stato: 'ricevuto' | 'accettato' | 'consegnato' | 'rifiutato' | 'annullato' | 'bozza';
   motivo_stato: string | null;
   scaduto: boolean;

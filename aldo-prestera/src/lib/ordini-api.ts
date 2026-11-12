@@ -261,6 +261,8 @@ export type OrderState = 'bozza' | 'ricevuto' | 'accettato' | 'consegnato' | 'ri
 /** Risposta dell'API per la pagina di attesa (importi già in euro) */
 export interface PublicOrder {
   numero_ordine: string;
+  /** Aggiunto dal sito (non dall'API): codice usato per chiamare getPublicOrder */
+  codice?: string;
   stato: OrderState;
   motivo_stato: string | null;
   modalita: 'consegna' | 'asporto';

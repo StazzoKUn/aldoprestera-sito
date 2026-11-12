@@ -23,6 +23,7 @@ function scheda(o: OrdineScheda) {
   return {
     id: o.id,
     numero_ordine: o.numero_ordine,
+    codice_pubblico: o.codice_pubblico,
     stato: o.stato,
     motivo_stato: o.motivo_stato,
     scaduto: o.stato === "rifiutato" && o.motivo_stato === MOTIVO_SCADENZA,

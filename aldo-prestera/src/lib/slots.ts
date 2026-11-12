@@ -5,17 +5,27 @@ const toMin = (hhmm: string) => {
   const [h, m] = hhmm.split(':').map(Number);
   return h * 60 + m;
 };
-const toHHMM = (min: number) =>
-  `${String(Math.floor(min / 60)).padStart(2, '0')}:${String(min % 60).padStart(2, '0')}`;
+const DAY = 24 * 60;
+/** Sotto questo orario (06:00) uno slot appartiene alla notte, cioè al giorno dopo l'apertura */
+const NIGHT_UNTIL = 6 * 60;
+const toHHMM = (min: number) => {
+  const m = ((min % DAY) + DAY) % DAY;
+  return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+};
 
-/** Tutti gli slot della serata, es. 19:30 … 21:15 */
-export const allSlots = (): string[] => {
-  const out: string[] = [];
-  for (let t = toMin(orderHours.firstSlot); t <= toMin(orderHours.lastSlot); t += orderHours.step) {
-    out.push(toHHMM(t));
+/** Slot del giorno di apertura `day`, in minuti dall'inizio di quel giorno (oltre 1440 = dopo mezzanotte) */
+const daySlots = (day: number): number[] => {
+  const out: number[] = [];
+  for (const [open, close] of orderHours.week[day] ?? []) {
+    for (let t = toMin(open) + orderHours.firstAfterOpen; t <= toMin(close) - orderHours.lastBeforeClose; t += orderHours.step) {
+      out.push(t);
+    }
   }
   return out;
 };
+
+/** Tutti gli slot di un giorno di apertura, es. 12:15 … 14:00 e 17:45 … 00:30 */
+export const allSlots = (day: number): string[] => daySlots(day).map(toHHMM);
 
 /** Data (YYYY-MM-DD), giorno della settimana e minuti da mezzanotte, nel fuso della pizzeria */
 export const nowInPizzeria = (now: Date) => {
@@ -43,17 +53,21 @@ export const nowInPizzeria = (now: Date) => {
  * `ignoreClock` (solo sviluppo) restituisce sempre tutti gli slot.
  */
 export const availableSlots = (mode: Mode, now = new Date(), ignoreClock = false): string[] => {
-  if (ignoreClock) return allSlots();
   const { day, minutes } = nowInPizzeria(now);
-  if (!(orderHours.days as readonly number[]).includes(day)) return [];
+  if (ignoreClock) return allSlots(day);
   const earliest = minutes + orderHours.leadMinutes[mode];
-  return allSlots().filter((s) => toMin(s) >= earliest);
+  // Dopo mezzanotte valgono ancora gli slot notturni del giorno prima (riportati a minuti di oggi)
+  const yesterday = daySlots((day + 6) % 7).map((t) => t - DAY);
+  return [...yesterday, ...daySlots(day)].filter((t) => t >= earliest).map(toHHMM);
 };
 
 /** Istante (UTC) di oggi alle `slot` (HH:MM) nel fuso della pizzeria: è l'orario_richiesto salvato in DB */
 export const slotToDate = (slot: string, now = new Date()): Date => {
-  const [y, mo, d] = nowInPizzeria(now).date.split('-').map(Number);
-  const guess = Date.UTC(y, mo - 1, d, ...(slot.split(':').map(Number) as [number, number]));
+  const today = nowInPizzeria(now);
+  const [y, mo, d] = today.date.split('-').map(Number);
+  // Uno slot notturno (es. 00:30) scelto prima di mezzanotte cade il giorno dopo
+  const nextDay = toMin(slot) < NIGHT_UNTIL && today.minutes >= NIGHT_UNTIL ? 1 : 0;
+  const guess = Date.UTC(y, mo - 1, d + nextDay, ...(slot.split(':').map(Number) as [number, number]));
   const wall = nowInPizzeria(new Date(guess)); // com'è quell'istante sull'orologio di Roma
   const [wy, wm, wd] = wall.date.split('-').map(Number);
   const wallMs = Date.UTC(wy, wm - 1, wd) + wall.minutes * 60_000;

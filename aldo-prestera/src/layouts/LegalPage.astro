@@ -28,6 +28,29 @@ const { title } = Astro.props;
     font-weight: 300;
     color: var(--on-dark-muted);
   }
+  .legal :global(h2) {
+    font-size: 30px;
+    line-height: 1.1;
+    color: var(--on-dark);
+    margin: 36px 0 10px;
+  }
+  .legal :global(p) {
+    margin-bottom: 14px;
+  }
+  .legal :global(ul) {
+    margin: 0 0 14px 20px;
+    list-style: disc;
+  }
+  .legal :global(li) {
+    margin-bottom: 8px;
+  }
+  .legal :global(strong) {
+    color: var(--on-dark);
+    font-weight: 500;
+  }
+  .legal :global(a) {
+    text-decoration: underline;
+  }
   h1 {
     font-size: 56px;
     line-height: 1;

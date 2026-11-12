@@ -155,13 +155,13 @@ export default function WaitApp({ code, logo, phone, phoneHref }: Props) {
       <div class="o-confirm__body">
         {logoEl}
         {view.icon ? (
-          <div class="o-confirm__check" aria-hidden="true">
+          <div class="o-confirm__check" aria-hidden="true" key={order.stato}>
             {view.icon}
           </div>
         ) : (
           <div class="o-wait__ring" aria-hidden="true" />
         )}
-        <div class="o-wait__status" aria-live="polite">
+        <div class="o-wait__status" aria-live="polite" key={order.stato}>
           <h1 class={order.stato === 'ricevuto' ? 'o-wait__title' : undefined}>{view.title}</h1>
           <p>{view.text}</p>
           {slow && (

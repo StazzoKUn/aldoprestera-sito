@@ -11,6 +11,10 @@ const envSchema = z.object({
     .regex(/^(mysql|mariadb):\/\//, "deve iniziare con mysql:// o mariadb://"),
   // Segreto condiviso col server del sito: senza non si entra in nessuna route (tranne /health).
   ORDINI_API_TOKEN: z.string().min(16, "deve essere lungo almeno 16 caratteri"),
+  // Facoltative: account di Aldo creato/aggiornato all'avvio (alternativa a `npm run admin:crea`, utile senza SSH).
+  ADMIN_USERNAME: z.string().regex(/^[a-z0-9._-]{3,64}$/i, "3-64 caratteri tra lettere, numeri, . _ -").optional(),
+  ADMIN_NOME: z.string().min(1).max(100).optional(),
+  ADMIN_PASSWORD: z.string().min(10, "almeno 10 caratteri").optional(),
   // Facoltativa: forza il log SQL (true/false). Se assente, è attivo solo in development.
   LOG_QUERIES: z.enum(["true", "false"]).optional(),
 });

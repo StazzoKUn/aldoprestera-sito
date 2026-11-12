@@ -1,8 +1,38 @@
 ---
 import LegalPage from '../layouts/LegalPage.astro';
+import { site, fullAddress } from '../data/site';
 ---
 
 <LegalPage title="Cookie">
-  <p>Informativa cookie: testo da fornire a cura della pizzeria.</p>
-  <p>Il sito non usa cookie di profilazione. Il carrello è salvato solo nel tuo browser (localStorage).</p>
+  <p>
+    Titolare: {site.legal.name} ({site.legal.form}), {fullAddress}, P.IVA {site.piva}. Contatti nella
+    <a href="/privacy">informativa privacy</a>.
+  </p>
+
+  <h2>Cosa usiamo</h2>
+  <p>
+    Questo sito <strong>non usa cookie di profilazione</strong>, né strumenti di analisi o pubblicità di terze parti. I
+    font sono ospitati sul sito stesso e la mappa è quella di OpenStreetMap.
+  </p>
+  <p>
+    Usiamo solo strumenti tecnici, necessari al funzionamento, per i quali la legge non richiede il consenso:
+  </p>
+  <ul>
+    <li>
+      <strong>Memoria del browser (localStorage)</strong>: salva sul tuo dispositivo il carrello, la scelta tra
+      consegna e ritiro e il codice dell'ordine inviato, così puoi riaprire la pagina di stato. Non viene inviata a
+      nessuno e puoi cancellarla dalle impostazioni del browser.
+    </li>
+    <li>
+      <strong>Cookie di sessione dell'area riservata</strong>: esiste solo per chi gestisce gli ordini della
+      pizzeria, dopo l'accesso. I clienti non lo ricevono.
+    </li>
+  </ul>
+
+  <h2>Contenuti di terze parti</h2>
+  <p>
+    La mappa nella sezione «Dove siamo» è caricata da OpenStreetMap: aprendo la pagina il tuo browser si collega ai
+    loro server e il gestore della mappa può ricevere, ad esempio, il tuo indirizzo IP. I link ai social (Instagram,
+    Facebook, TikTok) portano a siti esterni con le loro regole.
+  </p>
 </LegalPage>

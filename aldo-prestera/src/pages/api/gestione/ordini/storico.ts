@@ -20,7 +20,7 @@ export const GET: APIRoute = (ctx) =>
     const logoUrl = ctx.site ? new URL('/email/logo-chiaro.png', ctx.site).href : undefined;
     for (const id of res.appena_scaduti) {
       const c = res.data.find((o) => o.id === id);
-      if (c) await sendDecision(cardToDecisionOrder(c), { kind: 'rifiutato', reason: c.motivo_stato ?? 'La pizzeria non ha potuto rispondere' }, logoUrl);
+      if (c) await sendDecision(cardToDecisionOrder(c, ctx.site), { kind: 'rifiutato', reason: c.motivo_stato ?? 'La pizzeria non ha potuto rispondere' }, logoUrl);
     }
     return { ordini: res.data.map((o) => ({ ...o, email_non_inviata: emailFailed.has(o.numero_ordine) })), pagination: res.pagination };
   });

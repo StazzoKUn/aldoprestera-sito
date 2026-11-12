@@ -4,7 +4,7 @@ Direttive globali per lavorare su questo progetto. Hanno la precedenza sulle abi
 
 ## Progetto
 
-Sito web della **Aldo Prestera Pizzeria** (https://www.aldoprestera.it).
+Sito web della **Aldo Prestera Pizzeria** (https://aldoprestera.it, senza www: `www` non ha record DNS).
 
 - **Frontend**: sito **statico** in Astro (one page) + una sola isola interattiva (Preact) per il **modulo ordini**.
 - **Backend**: **Node.js + MySQL** per ricezione, salvataggio e gestione degli ordini.
@@ -111,7 +111,7 @@ Decisioni del 2026-11-09. Backend: `ordini-api` (Prisma, `Decimal`). Scelte già
 
 **Rimborsi**: **non esistono nel gestionale** (decisione del 2026-11-09, in attesa di Stripe): si gestiscono fuori. Nessun endpoint né schermata per i rimborsi; nel codice non si usano. **Le tabelle `rimborso` e `rimborso_riga` e la colonna `ordine.totale_rimborsato` restano nel DB e nello schema Prisma, inutilizzate**: si è deciso di non fare modifiche al DB (2026-11-09). Se tornano, vanno riprogettati insieme a Stripe.
 
-**Accesso**: un solo account, niente ruoli né registrazione; creato con `npm run admin:crea` in `ordini-api` (la password la inserisce l'utente, mai inventarla). **Solo in sviluppo/prova**: `npm run admin:dev` crea un account di prova con credenziali fisse scritte in `ordini-api/scripts/admin-dev.ts` (rifiutato in produzione). Niente interfaccia per creare utenti. Password con `scrypt` di `node:crypto`, nessuna nuova dipendenza. 5 tentativi falliti → blocco 15 min. Sessione nel DB (solo hash del token), 30 giorni, logout; cookie `HttpOnly`, `SameSite=Strict`, `Secure` fuori dallo sviluppo. `ordini-api` richiede `ORDINI_API_TOKEN` (dal server del sito, valore fittizio nei `.env.example`) su tutte le route tranne `/health`; le route di gestione anche la sessione (`authenticate` è già montato in `app.ts`). Il browser parla solo col sito (`/api/gestione/*`), mai con l'API; controllo `Origin` sulle richieste che scrivono. Le pagine `/gestione` richiedono login, `noindex`, `prerender = false`.
+**Accesso**: un solo account, niente ruoli né registrazione; creato con `npm run admin:crea` in `ordini-api` (la password la inserisce l'utente, mai inventarla). **Solo in sviluppo/prova**: `npm run admin:dev` crea un account di prova con credenziali fisse scritte in `ordini-api/scripts/admin-dev.ts` (rifiutato in produzione). In produzione senza SSH: `ADMIN_USERNAME`/`ADMIN_NOME`/`ADMIN_PASSWORD` nell'ambiente dell'API creano o aggiornano l'account all'avvio (`modules/accesso/admin-env.ts`). Niente interfaccia per creare utenti. Password con `scrypt` di `node:crypto`, nessuna nuova dipendenza. 5 tentativi falliti → blocco 15 min. Sessione nel DB (solo hash del token), 30 giorni, logout; cookie `HttpOnly`, `SameSite=Strict`, `Secure` fuori dallo sviluppo. `ordini-api` richiede `ORDINI_API_TOKEN` (dal server del sito, valore fittizio nei `.env.example`) su tutte le route tranne `/health`; le route di gestione anche la sessione (`authenticate` è già montato in `app.ts`). Il browser parla solo col sito (`/api/gestione/*`), mai con l'API; controllo `Origin` sulle richieste che scrivono. Le pagine `/gestione` richiedono login, `noindex`, `prerender = false`.
 
 **Pannello `/gestione`** (isola Preact, stile del sito, mobile-first). "Chiusi oggi" = ordini conclusi (consegnato, rifiutato, annullato) della giornata, fino a mezzanotte (Europe/Rome); lo storico (ricerca per numero, nome, telefono, data) copre tutto il resto. Endpoint già pronti: `GET /api/gestione/ordini`, `GET /api/gestione/ordini/storico`, `POST /api/gestione/ordini/<id>/stato` (in `ordini-api`: `/gestione/...`, token + sessione): sotto 768 px "Da accettare", "In corso", "Chiusi oggi" sono schede, da 768 px colonne; pulsanti ≥ 44 px. Scheda: orario, modalità, numero, nome, pagamento, indirizzo, citofono, prodotti, note, totale, "Chiama"; "In corso" ordinata per orario. Aggiornamento ogni 10 s. Suono ripetuto finché ci sono ordini da accettare, con "Inizia servizio" (abilita audio e, se possibile, tiene acceso lo schermo). Avviso rosso se cade la connessione. "Accetta" con un tocco; "Rifiuta" chiede motivo e conferma; "Consegnato"/"Ritirato" lascia qualche secondo "Annulla". Storico con ricerca per numero, nome, telefono, data.
 
@@ -165,5 +165,5 @@ Fedeltà **alta** al mockup: colori, tipografia, spaziature e copy sono finali.
 
 ## Deploy
 
-- Plesk con Node.js: procedura in `docs/DEPLOY-plesk.md`; pacchetto generato da `scripts/pack.py`.
+- Plesk con Node.js: procedura in `docs/DEPLOY-plesk.md`; pacchetti generati da `scripts/pack-plesk.py`.
 - Prima di ogni rilascio: build pulita, `.env` di produzione verificato, migrazioni DB applicate, test di un ordine reale end-to-end (DB + email + WhatsApp), controllo che i segnaposto siano stati sostituiti.

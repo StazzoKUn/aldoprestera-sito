@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import type { MenuCategory } from '../../data/menu';
 import { eur, countTxt } from '../../lib/format';
-import { delivery } from '../../data/site';
 import {
   computeTotals,
   minOrderTxt,
@@ -44,13 +43,24 @@ const emptyCustomer: Customer = {
   name: '',
   phone: '',
   email: '',
-  zone: delivery.zones[0]?.id ?? '',
+  city: '',
   street: '',
   number: '',
   cap: '',
   province: '',
   intercom: '',
   notes: '',
+};
+
+/** Orari divisi in Pranzo (prima delle 17) e Sera (dopo, mezzanotte compresa); senza gruppi se ce n'è uno solo */
+const slotGroups = (slots: string[]): { label: string; times: string[] }[] => {
+  const lunch = slots.filter((t) => Number(t.slice(0, 2)) >= 6 && Number(t.slice(0, 2)) < 17);
+  const evening = slots.filter((t) => !lunch.includes(t));
+  if (!lunch.length || !evening.length) return [{ label: '', times: slots }];
+  return [
+    { label: 'Pranzo', times: lunch },
+    { label: 'Sera', times: evening },
+  ];
 };
 
 const read = <T,>(store: Storage, key: string): T | null => {
@@ -76,6 +86,7 @@ export default function OrderApp({ menu, images, logo, phone, phoneHref }: Props
   const [mode, setMode] = useState<Mode>('consegna');
   const [step, setStepState] = useState<Step>('menu');
   const [slot, setSlot] = useState('');
+  const slotDialog = useRef<HTMLDialogElement>(null);
   const pay: Pay = 'Contanti'; // solo contanti: nessuna scelta
   const [customer, setCustomer] = useState<Customer>(emptyCustomer);
   const [privacy, setPrivacy] = useState(false);
@@ -148,7 +159,7 @@ export default function OrderApp({ menu, images, logo, phone, phoneHref }: Props
     return () => removeEventListener('popstate', onPop);
   }, []);
 
-  const totals = computeTotals(cart, mode, menu, customer.zone);
+  const totals = computeTotals(cart, mode, menu);
   const isC = mode === 'consegna';
   const feeLabel = isC ? 'Consegna' : 'Ritiro';
   const feeTxt = isC ? eur(totals.fee) : 'gratis';
@@ -407,17 +418,9 @@ export default function OrderApp({ menu, images, logo, phone, phoneHref }: Props
                 <h2 class="o-sec__title" id="s-indirizzo">
                   <span>2</span> Dove consegniamo
                 </h2>
-                {delivery.zones.length > 1 && (
-                  <Field label="Comune" error={errors.zone} id="f-zone">
-                    <select id="f-zone" required {...field('zone')} aria-invalid={!!errors.zone}>
-                      {delivery.zones.map((z) => (
-                        <option value={z.id} key={z.id}>
-                          {z.name} · consegna {eur(z.fee)}
-                        </option>
-                      ))}
-                    </select>
-                  </Field>
-                )}
+                <Field label="Comune" error={errors.city} id="f-city">
+                  <input id="f-city" type="text" autocomplete="address-level2" maxLength={60} required {...field('city')} aria-invalid={!!errors.city} />
+                </Field>
                 <div class="o-row-addr">
                   <Field label="Indirizzo" error={errors.street} id="f-street">
                     <input id="f-street" type="text" autocomplete="address-line1" required {...field('street')} aria-invalid={!!errors.street} />
@@ -443,8 +446,8 @@ export default function OrderApp({ menu, images, logo, phone, phoneHref }: Props
             <h2 class="o-sec__title" id="s-orario">
               <span>{isC ? 3 : 2}</span> Quando lo vuoi
             </h2>
-            <fieldset class="o-field" id="o-slots">
-              <legend class="o-label">{isC ? 'Orario di consegna' : 'Orario di ritiro'}</legend>
+            <div class="o-field" id="o-slots">
+              <label class="o-label" for="f-slot">{isC ? 'Orario di consegna' : 'Orario di ritiro'}</label>
               {slotsFailed && !slots ? (
                 <p class="o-closed">
                   Non riusciamo a caricare gli orari.{' '}
@@ -456,14 +459,61 @@ export default function OrderApp({ menu, images, logo, phone, phoneHref }: Props
               ) : slots === null ? (
                 <p class="o-closed">Carico gli orari disponibili…</p>
               ) : slots.length > 0 ? (
-                <div class="o-chips o-chips--4">
-                  {slots.map((t) => (
-                    <label class="o-chip" key={t}>
-                      <input type="radio" name="slot" value={t} checked={slot === t} onChange={() => { setSlot(t); setErrors((er) => ({ ...er, slot: undefined })); }} />
-                      <span>{t}</span>
-                    </label>
-                  ))}
-                </div>
+                <>
+                  <button
+                    type="button"
+                    id="f-slot"
+                    class="o-slotbtn"
+                    aria-haspopup="dialog"
+                    aria-invalid={!!errors.slot}
+                    onClick={() => slotDialog.current?.showModal()}
+                  >
+                    <span>{slot || 'Scegli un orario'}</span>
+                    <span class="o-slotbtn__edit">Cambia</span>
+                  </button>
+                  <dialog
+                    ref={slotDialog}
+                    class="o-modal"
+                    aria-labelledby="o-modal-title"
+                    onClick={(e) => {
+                      // clic sullo sfondo (fuori dal pannello) = chiudi
+                      if (e.target === e.currentTarget) slotDialog.current?.close();
+                    }}
+                  >
+                    <div class="o-modal__panel">
+                      <div class="o-modal__head">
+                        <h3 id="o-modal-title">{isC ? 'Orario di consegna' : 'Orario di ritiro'}</h3>
+                        <button type="button" class="o-modal__close" aria-label="Chiudi" onClick={() => slotDialog.current?.close()}>
+                          ×
+                        </button>
+                      </div>
+                      <div class="o-modal__body">
+                        {slotGroups(slots).map((g) => (
+                          <section key={g.label || 'tutti'}>
+                            {g.label && <h4 class="o-modal__group">{g.label}</h4>}
+                            <div class="o-times">
+                              {g.times.map((t) => (
+                                <button
+                                  type="button"
+                                  key={t}
+                                  class={`o-time${slot === t ? ' is-on' : ''}`}
+                                  aria-pressed={slot === t}
+                                  onClick={() => {
+                                    setSlot(t);
+                                    setErrors((er) => ({ ...er, slot: undefined }));
+                                    slotDialog.current?.close();
+                                  }}
+                                >
+                                  {t}
+                                </button>
+                              ))}
+                            </div>
+                          </section>
+                        ))}
+                      </div>
+                    </div>
+                  </dialog>
+                </>
               ) : (
                 <p class="o-closed">
                   Per oggi non ci sono più orari disponibili per gli ordini online. Chiamaci al{' '}
@@ -471,7 +521,7 @@ export default function OrderApp({ menu, images, logo, phone, phoneHref }: Props
                 </p>
               )}
               {errors.slot && !!slots?.length && <span class="o-error">{errors.slot}</span>}
-            </fieldset>
+            </div>
             <Field label="Note per la pizzeria" id="f-notes">
               <textarea id="f-notes" rows={2} placeholder="Es. una margherita senza basilico" {...field('notes')} />
             </Field>

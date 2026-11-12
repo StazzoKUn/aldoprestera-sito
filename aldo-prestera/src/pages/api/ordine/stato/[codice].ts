@@ -28,7 +28,7 @@ export const GET: APIRoute = async ({ params, clientAddress, site }) => {
     if (appena_scaduto) {
       const logoUrl = site ? new URL('/email/logo-chiaro.png', site).href : undefined;
       // Se l'email fallisce l'ordine resta rifiutato: l'errore è già nei log e il pannello lo segnala
-      await notifyExpired({ ...ordine, appena_scaduto, contatto }, logoUrl);
+      await notifyExpired({ ...ordine, codice: code, appena_scaduto, contatto }, logoUrl, site);
     }
     return json({ ok: true, ordine });
   } catch (err) {

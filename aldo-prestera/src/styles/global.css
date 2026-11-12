@@ -149,3 +149,22 @@ h3 {
 .btn--outline:hover {
   border-color: rgba(242, 239, 233, 0.7);
 }
+
+/* Passaggio fra pagine con dissolvenza (browser che lo supportano) */
+@view-transition {
+  navigation: auto;
+}
+
+/* Chi preferisce meno movimento non vede animazioni né scorrimenti automatici */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

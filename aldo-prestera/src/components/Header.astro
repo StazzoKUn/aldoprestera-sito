@@ -130,6 +130,20 @@ const links = [
     z-index: 20;
     background: var(--ink);
     padding: 96px 24px 32px;
+    /* Il menù mobile appare e sparisce con una dissolvenza (display in transizione per animare anche la chiusura) */
+    opacity: 1;
+    transition:
+      opacity 0.25s ease,
+      display 0.25s allow-discrete;
+  }
+  .drawer[hidden] {
+    display: none;
+    opacity: 0;
+  }
+  @starting-style {
+    .drawer {
+      opacity: 0;
+    }
   }
   .drawer nav {
     display: flex;

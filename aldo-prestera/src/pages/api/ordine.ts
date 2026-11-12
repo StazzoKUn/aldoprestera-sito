@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { computeTotals, validateOrder, zoneById, type Cart, type Customer, type OrderRequest, type OrderResponse, type Pay } from '../../lib/order';
+import { computeTotals, validateOrder, type Cart, type Customer, type OrderRequest, type OrderResponse, type Pay } from '../../lib/order';
 import { availableSlots, slotToDate } from '../../lib/slots';
 import { orderWhatsApp, sendOrderEmail, type PlacedOrder } from '../../lib/notify';
 import { ApiError, createOrder, loadMenu } from '../../lib/ordini-api';
@@ -47,7 +47,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
     name: str(c.name, 80),
     phone: str(c.phone, 30),
     email: str(c.email, 120).trim(),
-    zone: isC ? str(c.zone, 40) : '',
+    city: isC ? str(c.city, 60).trim() : '',
     street: isC ? str(c.street, 120) : '',
     number: isC ? str(c.number, 12) : '',
     cap: isC ? str(c.cap, 5).trim() : '',
@@ -58,7 +58,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
   const slot = str(body.slot, 5);
   const privacy = body.privacy === true;
 
-  const totals = computeTotals(cart, mode, menu, customer.zone);
+  const totals = computeTotals(cart, mode, menu);
   const fields = validateOrder({ customer, mode, slot, privacy }, totals);
   if (Object.keys(fields).length) {
     const error = fields.cart && totals.belowMin ? fields.cart : 'Controlla i campi evidenziati.';
@@ -84,7 +84,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
       delivery: isC
         ? {
             street: `${customer.street.trim()} ${customer.number.trim()}`,
-            city: zoneById(customer.zone).name,
+            city: customer.city,
             cap: customer.cap,
             province: customer.province,
           }

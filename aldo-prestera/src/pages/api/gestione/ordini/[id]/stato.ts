@@ -36,7 +36,7 @@ export const POST: APIRoute = async (ctx) => {
     if (res.stato_precedente === 'ricevuto' && (o.stato === 'accettato' || o.stato === 'rifiutato')) {
       const logoUrl = ctx.site ? new URL('/email/logo-chiaro.png', ctx.site).href : undefined;
       await sendDecision(
-        cardToDecisionOrder(o),
+        cardToDecisionOrder(o, ctx.site),
         o.stato === 'accettato' ? { kind: 'accettato' } : { kind: 'rifiutato', reason: o.motivo_stato ?? '' },
         logoUrl,
       );

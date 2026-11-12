@@ -23,8 +23,13 @@ export async function sendDecision(o: DecisionOrder, d: Decision, logoUrl?: stri
   return sent;
 }
 
+/** Indirizzo della pagina di stato /ordine/<codice>, o undefined se manca il codice o l'URL del sito */
+export const statusUrl = (code: string | undefined, base: URL | undefined) =>
+  code && base ? new URL(`/ordine/${encodeURIComponent(code)}`, base).href : undefined;
+
 /** Dati per l'email di decisione dalla scheda ordine del pannello (indirizzo di consegna compreso) */
-export const cardToDecisionOrder = (c: Scheda): DecisionOrder => ({
+export const cardToDecisionOrder = (c: Scheda, base?: URL): DecisionOrder => ({
+  statusUrl: statusUrl(c.codice_pubblico, base),
   number: c.numero_ordine,
   mode: c.modalita,
   slot: slotLabel(c.orario_richiesto),
@@ -41,11 +46,12 @@ export const cardToDecisionOrder = (c: Scheda): DecisionOrder => ({
 });
 
 /** Email di rifiuto per un ordine scaduto proprio ora (i dati vengono dalla lettura pubblica dell'API) */
-export function notifyExpired(v: PublicOrder, logoUrl?: string): Promise<boolean> {
+export function notifyExpired(v: PublicOrder, logoUrl?: string, base?: URL): Promise<boolean> {
   const c = v.contatto;
   if (!c) return Promise.resolve(true);
   return sendDecision(
     {
+      statusUrl: statusUrl(v.codice, base),
       number: v.numero_ordine,
       mode: v.modalita,
       slot: slotLabel(v.orario_richiesto),

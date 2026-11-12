@@ -14,8 +14,8 @@ export interface Customer {
   name: string;
   phone: string;
   email: string;
-  /** id della zona di consegna (vedi delivery.zones) */
-  zone: string;
+  /** Comune di consegna, scritto dal cliente (solo consegna) */
+  city: string;
   street: string;
   number: string;
   /** CAP di 5 cifre (solo consegna) */
@@ -50,9 +50,7 @@ export interface OrderResponse {
   code: string;
 }
 
-export const zoneById = (id: string) => delivery.zones.find((z) => z.id === id) ?? delivery.zones[0];
-
-export const computeTotals = (cart: Cart, mode: Mode, menu: MenuCategory[], zoneId = '') => {
+export const computeTotals = (cart: Cart, mode: Mode, menu: MenuCategory[]) => {
   const lines: OrderLine[] = [];
   let pizzas = 0;
   for (const cat of menu) {
@@ -65,7 +63,7 @@ export const computeTotals = (cart: Cart, mode: Mode, menu: MenuCategory[], zone
   }
   const subtotal = lines.reduce((a, l) => a + l.total, 0);
   const count = lines.reduce((a, l) => a + l.qty, 0);
-  const fee = mode === 'consegna' && count > 0 ? zoneById(zoneId).fee : 0;
+  const fee = mode === 'consegna' && count > 0 ? delivery.fee : 0;
   const belowMin = mode === 'consegna' && count > 0 && subtotal < delivery.minOrder;
   return { lines, subtotal, count, pizzas, fee, total: subtotal + fee, belowMin };
 };
@@ -73,7 +71,7 @@ export const computeTotals = (cart: Cart, mode: Mode, menu: MenuCategory[], zone
 export const minOrderTxt = () => `Ordine minimo per la consegna ${eur(delivery.minOrder)}`;
 
 export type FieldErrors = Partial<
-  Record<'name' | 'phone' | 'email' | 'zone' | 'street' | 'number' | 'cap' | 'province' | 'slot' | 'privacy' | 'cart', string>
+  Record<'name' | 'phone' | 'email' | 'city' | 'street' | 'number' | 'cap' | 'province' | 'slot' | 'privacy' | 'cart', string>
 >;
 
 const PHONE_RE = /^\+?[\d\s./-]{6,20}$/;
@@ -96,7 +94,7 @@ export const validateOrder = (
   if (!c.email.trim()) e.email = 'Inserisci la tua email.';
   else if (!EMAIL_RE.test(c.email.trim())) e.email = 'Email non valida.';
   if (o.mode === 'consegna') {
-    if (!delivery.zones.some((z) => z.id === c.zone)) e.zone = 'Scegli il comune.';
+    if (!c.city.trim()) e.city = 'Inserisci il comune.';
     if (!c.street.trim()) e.street = "Inserisci l'indirizzo.";
     if (!c.number.trim()) e.number = 'N° civico.';
     if (!CAP_RE.test(c.cap.trim())) e.cap = 'CAP di 5 cifre.';
