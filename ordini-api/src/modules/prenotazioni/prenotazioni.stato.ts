@@ -1,12 +1,12 @@
 // Macchina a stati della prenotazione: quali cambi di stato sono ammessi.
 //
 //   richiesta ──► confermata ──► annullata
-//       │  │
+//       │  │           │
 //       │  └────► annullata
-//       ▼
-//    rifiutata
+//       ▼           ▼
+//    rifiutata ◄────┘  (anche da confermata: Aldo può ripensarci)
 //
-// Rifiutata e annullata sono finali. Nessuna correzione all'indietro (a differenza degli ordini).
+// Solo Aldo cambia lo stato (il cliente per annullare telefona). Rifiutata e annullata sono finali.
 // È una tabella pura, senza database.
 import { StatoPrenotazione } from "../../generated/prisma/enums.js";
 import { conflict } from "../../lib/errors.js";
@@ -15,7 +15,7 @@ export const STATI_PRENOTAZIONE = Object.values(StatoPrenotazione) as [StatoPren
 
 export const TRANSIZIONI_PRENOTAZIONE: Record<StatoPrenotazione, readonly StatoPrenotazione[]> = {
   richiesta: ["confermata", "rifiutata", "annullata"],
-  confermata: ["annullata"],
+  confermata: ["rifiutata", "annullata"],
   rifiutata: [],
   annullata: [],
 };
