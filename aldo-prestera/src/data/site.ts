@@ -69,6 +69,20 @@ export const orderHours = {
   timeZone: 'Europe/Rome',
 } as const;
 
+// Prenotazione tavoli: usa le stesse fasce di apertura di orderHours (src/lib/prenotazioni-slots.ts).
+// Si può arrivare dall'apertura del turno, ogni `step` minuti, fino all'ultimo arrivo (e mai oltre la chiusura).
+export const reservationHours = {
+  step: 15,
+  /** Un turno che apre prima di quest'ora è il pranzo, gli altri sono cena */
+  lunchOpensBefore: '17:00',
+  /** Ultimo arrivo prenotabile per turno */
+  lastArrival: { pranzo: '16:00', cena: '23:00' },
+  /** Anticipo minimo rispetto all'ora attuale, in minuti (provvisorio: da confermare con Aldo) */
+  leadMinutes: 30,
+  /** Si prenota fino a questi giorni avanti (oggi compreso). Deve coincidere con GIORNI_ANTICIPO di ordini-api */
+  daysAhead: 7,
+} as const;
+
 // Consegna a domicilio: tariffa unica (il comune lo scrive il cliente) e ordine minimo.
 export const delivery = {
   minOrder: 10,

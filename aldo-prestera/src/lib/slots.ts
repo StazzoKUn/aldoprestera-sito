@@ -1,14 +1,14 @@
 import { orderHours } from '../data/site';
 import type { Mode } from './order';
 
-const toMin = (hhmm: string) => {
+export const toMin = (hhmm: string) => {
   const [h, m] = hhmm.split(':').map(Number);
   return h * 60 + m;
 };
 const DAY = 24 * 60;
 /** Sotto questo orario (06:00) uno slot appartiene alla notte, cioè al giorno dopo l'apertura */
 const NIGHT_UNTIL = 6 * 60;
-const toHHMM = (min: number) => {
+export const toHHMM = (min: number) => {
   const m = ((min % DAY) + DAY) % DAY;
   return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
 };
