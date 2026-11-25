@@ -61,7 +61,7 @@ export async function deleteCliente(id: bigint) {
   } catch (err) {
     if (isPrismaError(err, "P2025")) throw notFound(`Cliente ${id} non trovato`);
     if (isPrismaError(err, "P2003")) {
-      throw conflict(`Il cliente ${id} ha degli ordini e non può essere eliminato`);
+      throw conflict(`Il cliente ${id} ha degli ordini o delle prenotazioni e non può essere eliminato`);
     }
     throw err;
   }

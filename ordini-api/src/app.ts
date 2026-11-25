@@ -8,6 +8,7 @@ import { clientiRouter } from "./modules/clienti/clienti.routes.js";
 import { gestioneRouter } from "./modules/gestione/gestione.routes.js";
 import { indirizziRouter } from "./modules/indirizzi/indirizzi.routes.js";
 import { ordiniRouter } from "./modules/ordini/ordini.routes.js";
+import { prenotazioniRouter } from "./modules/prenotazioni/prenotazioni.routes.js";
 import { prodottiRouter } from "./modules/prodotti/prodotti.routes.js";
 
 export const app = express();
@@ -32,6 +33,7 @@ api.use("/prodotti", prodottiRouter);
 api.use("/clienti/:cliente_id/indirizzi", indirizziRouter);
 api.use("/clienti", clientiRouter);
 api.use("/ordini", ordiniRouter);
+api.use("/prenotazioni", prenotazioniRouter);
 app.use(api);
 
 app.use(notFoundHandler);

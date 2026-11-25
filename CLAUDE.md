@@ -76,14 +76,16 @@ Decisioni del 2026-11-25. Si fa **prima di Stripe** (l'integrazione Stripe è so
 - Si prenota **fino a 7 giorni avanti** (gli ordini invece sono solo per oggi).
 - Nome e cognome in un **campo unico**, come nel form ordini (`ordini-api.ts` lo divide in `nome`/`cognome` per `Cliente`).
 
-**Stati** (`StatoPrenotazione`, enum): `richiesta`, `confermata`, `rifiutata`, `annullata`. Niente "arrivata" né "no show". Rifiuto automatico se Aldo non risponde (stessa logica degli ordini: applicata nelle letture, con `motivo_stato`); tempi da definire.
+**Stati** (`StatoPrenotazione`, enum): `richiesta`, `confermata`, `rifiutata`, `annullata`. Niente "arrivata" né "no show". Transizioni (`ordini-api/src/modules/prenotazioni/prenotazioni.stato.ts`): richiesta→confermata|rifiutata|annullata; confermata→annullata; rifiutata e annullata sono finali. **Rifiuto automatico**: una `richiesta` ancora senza risposta quando passa l'orario prenotato diventa `rifiutata` con motivo «La pizzeria non ha potuto rispondere» (nessun timer: si applica nelle letture, come per gli ordini). **Motivi di rifiuto** (lista fissa, provvisoria da confermare con Aldo, in `prenotazioni.motivi.ts`): «Siamo al completo in quell'orario», «Locale chiuso in quella data», «Non siamo riusciti a contattarti».
+
+**Backend fatto (passo 2, 2026-11-25)**: modulo `ordini-api/src/modules/prenotazioni/`. Route del sito (solo token): `POST /prenotazioni` (orario nel futuro ed entro 7 giorni, `persone` 1–200 solo come limite tecnico) e `GET /prenotazioni/pubblico/:codice` (mai tavolo_note; `contatto` solo se scaduta proprio ora, per l'email di rifiuto). Route del pannello (token + sessione, in `gestione.routes.ts`): `GET /gestione/prenotazioni` (da_confermare, confermate, chiuse, da oggi in avanti, + `appena_scadute`), `POST /gestione/prenotazioni/:id/stato` (restituisce `stato_precedente`: l'email parte solo per richiesta→confermata/rifiutata), `PATCH /gestione/prenotazioni/:id/tavolo`. Gli orari prenotabili (turni, ultimo arrivo) NON sono controllati dall'API: sono compito del sito (passo 3). Non c'è ancora l'annullamento da parte del cliente (solo Aldo può annullare).
 
 **Tabella `Prenotazione`** (scelta A: **nessun dato duplicato** da `Cliente`; nome, cognome, telefono ed email si leggono da `Cliente`, come l'email dell'ordine):
 `id`, `codice_pubblico` (univoco, per la pagina di attesa del cliente, mai l'id), `cliente_id` (obbligatorio), `persone`, `inizio` (UTC), `note` (solo del cliente), `stato`, `motivo_stato`, `tavolo_note` (promemoria libero di Aldo, es. "T3+T4 uniti", non vincola niente), `creato_il`, `aggiornato_il`. Indici su `[stato, inizio]` e `inizio`. Il sito deve tenere aggiornato il telefono di `Cliente` a ogni prenotazione.
 
 **Orari prenotabili**: gli stessi turni di `orderHours` in `aldo-prestera/src/data/site.ts` (unica fonte, non duplicarli), arrivi ogni 15 minuti, **primo arrivo = l'apertura del turno** (si prenota appena aprono). **Ultimo arrivo prenotabile: le 16:00 a pranzo e le 23:00 a cena** (non si prenota fino alla chiusura), e comunque mai oltre la chiusura del turno. Giorni di apertura: lunedì e mercoledì solo cena; gli altri giorni pranzo e cena.
 
-**Da definire prima del codice**: tempi del rifiuto automatico; testi e pagina del cliente; email di conferma/rifiuto (stesso schema degli ordini).
+**Da definire prima del codice del sito**: testi e pagina del cliente; email di conferma/rifiuto (stesso schema degli ordini).
 
 **Rimandato (non deciso)**: `BloccoPrenotazioni` (Aldo che chiude una serata o un turno). Il blocco delle fasce è già previsto «alla fine» per gli ordini: se si fa, un'unica soluzione per entrambi.
 
