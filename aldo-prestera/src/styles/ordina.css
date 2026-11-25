@@ -1569,3 +1569,25 @@ body:has(.o-confirm) {
     padding: 22px 16px 40px;
   }
 }
+
+/* Rimando alla prenotazione dal menù ordini */
+.o-booklink {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  min-height: 44px;
+  padding: 8px var(--gutter);
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+  color: var(--muted-2);
+}
+.o-booklink b {
+  color: var(--red);
+  font-weight: 500;
+}
+.o-booklink:hover b {
+  text-decoration: underline;
+}

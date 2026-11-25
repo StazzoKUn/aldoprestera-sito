@@ -17,6 +17,7 @@ const links = [
 
   <nav class="nav" aria-label="Principale">
     {links.map((l) => <a href={l.href}>{l.label}</a>)}
+    <a href="/prenota">Prenota</a>
     <a href="/ordina" class="cta">Ordina ora</a>
   </nav>
 
@@ -27,6 +28,7 @@ const links = [
   <div class="drawer" id="menu-mobile" hidden>
     <nav aria-label="Principale (mobile)">
       {links.map((l) => <a href={l.href}>{l.label}</a>)}
+      <a href="/prenota">Prenota un tavolo</a>
       <a href="/ordina" class="btn btn--red">Ordina ora</a>
     </nav>
   </div>
@@ -159,6 +161,20 @@ const links = [
   }
   .drawer .btn {
     margin-top: 28px;
+  }
+
+  /* Con la voce in più, sotto i 1100 px il menù si stringe (niente contatto col logo) */
+  @media (max-width: 1100px) {
+    .header {
+      gap: 24px;
+    }
+    .nav {
+      gap: 22px;
+      letter-spacing: 0.14em;
+    }
+    .cta {
+      padding: 12px 18px;
+    }
   }
 
   @media (max-width: 860px) {

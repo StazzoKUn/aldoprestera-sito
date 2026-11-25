@@ -578,6 +578,9 @@ export default function OrderApp({ menu, images, logo, phone, phoneHref }: Props
     <div class="o-page">
       {header}
       {pendingBanner}
+      <a class="o-booklink" href="/prenota">
+        <span>Vuoi cenare da noi?</span> <b>Prenota un tavolo →</b>
+      </a>
       <div class="o-layout">
         <div class="o-menu">
           <div class="o-menu__top">
