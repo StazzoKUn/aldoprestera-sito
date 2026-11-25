@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import {
   MAX_PEOPLE,
   validateReservation,
@@ -40,7 +40,17 @@ const dayName = (date: string) => {
   return new Intl.DateTimeFormat('it-IT', { timeZone: 'UTC', weekday: 'long', day: 'numeric', month: 'long' }).format(new Date(`${date}T12:00:00Z`));
 };
 
+/** Testo del pulsante del giorno: "Oggi"/"Domani"/"Dom" sopra, "29 nov" sotto */
+const dayChip = (date: string) => {
+  const top = dayName(date);
+  const d = new Date(`${date}T12:00:00Z`);
+  const short = new Intl.DateTimeFormat('it-IT', { timeZone: 'UTC', weekday: 'short' }).format(d);
+  const num = new Intl.DateTimeFormat('it-IT', { timeZone: 'UTC', day: 'numeric', month: 'short' }).format(d);
+  return { top: top === 'Oggi' || top === 'Domani' ? top : short.charAt(0).toUpperCase() + short.slice(1).replace('.', ''), num };
+};
+
 export default function ReserveApp({ logo, phone, phoneHref }: Props) {
+  const slotDialog = useRef<HTMLDialogElement>(null);
   /** null = in caricamento */
   const [days, setDays] = useState<ReservationDay[] | null>(null);
   const [daysFailed, setDaysFailed] = useState(false);
@@ -176,55 +186,93 @@ export default function ReserveApp({ logo, phone, phoneHref }: Props) {
                 </p>
               ) : (
                 <>
-                  <label class="o-label" for="r-date">
+                  <span class="o-label" id="r-day-label">
                     Giorno
-                  </label>
-                  <select
-                    id="r-date"
-                    value={date}
-                    aria-invalid={!!errors.date}
-                    onChange={(e) => {
-                      setDate((e.currentTarget as HTMLSelectElement).value);
-                      setSlot('');
-                      setErrors((er) => ({ ...er, date: undefined, slot: undefined }));
-                    }}
-                  >
-                    {days.map((d) => (
-                      <option value={d.date} key={d.date}>
-                        {dayName(d.date)}
-                      </option>
-                    ))}
-                  </select>
+                  </span>
+                  <div class="r-days" role="radiogroup" aria-labelledby="r-day-label">
+                    {days.map((d) => {
+                      const c = dayChip(d.date);
+                      const on = d.date === date;
+                      return (
+                        <button
+                          type="button"
+                          role="radio"
+                          key={d.date}
+                          class={`r-day${on ? ' is-on' : ''}`}
+                          aria-checked={on}
+                          aria-label={dayName(d.date)}
+                          onClick={() => {
+                            setDate(d.date);
+                            setSlot('');
+                            setErrors((er) => ({ ...er, date: undefined, slot: undefined }));
+                          }}
+                        >
+                          <span class="r-day__top">{c.top}</span>
+                          <span class="r-day__num">{c.num}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
                   {errors.date && <span class="o-error">{errors.date}</span>}
 
-                  <span class="o-label r-label-gap" id="r-slot-label">
+                  <label class="o-label r-label-gap" for="f-slot">
                     Orario di arrivo
-                  </span>
-                  <div role="group" aria-labelledby="r-slot-label">
-                    {day &&
-                      groups(day.slots).map((g) => (
-                        <section key={g.label || 'tutti'}>
-                          {g.label && <h3 class="o-modal__group">{g.label}</h3>}
-                          <div class="o-times">
-                            {g.times.map((t) => (
-                              <button
-                                type="button"
-                                key={t}
-                                class={`o-time${slot === t ? ' is-on' : ''}`}
-                                aria-pressed={slot === t}
-                                onClick={() => {
-                                  setSlot(t);
-                                  setErrors((er) => ({ ...er, slot: undefined }));
-                                }}
-                              >
-                                {t}
-                              </button>
-                            ))}
-                          </div>
-                        </section>
-                      ))}
-                  </div>
+                  </label>
+                  <button
+                    type="button"
+                    id="f-slot"
+                    class="o-slotbtn"
+                    aria-haspopup="dialog"
+                    aria-invalid={!!errors.slot}
+                    onClick={() => slotDialog.current?.showModal()}
+                  >
+                    <span>{slot || 'Scegli un orario'}</span>
+                    <span class="o-slotbtn__edit">{slot ? 'Cambia' : 'Scegli'}</span>
+                  </button>
                   {errors.slot && <span class="o-error">{errors.slot}</span>}
+                  <dialog
+                    ref={slotDialog}
+                    class="o-modal"
+                    aria-labelledby="r-modal-title"
+                    onClick={(e) => {
+                      // clic sullo sfondo (fuori dal pannello) = chiudi
+                      if (e.target === e.currentTarget) slotDialog.current?.close();
+                    }}
+                  >
+                    <div class="o-modal__panel">
+                      <div class="o-modal__head">
+                        <h3 id="r-modal-title">Orario di arrivo · {day ? dayName(day.date).toLowerCase() : ''}</h3>
+                        <button type="button" class="o-modal__close" aria-label="Chiudi" onClick={() => slotDialog.current?.close()}>
+                          ×
+                        </button>
+                      </div>
+                      <div class="o-modal__body">
+                        {day &&
+                          groups(day.slots).map((g) => (
+                            <section key={g.label || 'tutti'}>
+                              {g.label && <h4 class="o-modal__group">{g.label}</h4>}
+                              <div class="o-times">
+                                {g.times.map((t) => (
+                                  <button
+                                    type="button"
+                                    key={t}
+                                    class={`o-time${slot === t ? ' is-on' : ''}`}
+                                    aria-pressed={slot === t}
+                                    onClick={() => {
+                                      setSlot(t);
+                                      setErrors((er) => ({ ...er, slot: undefined }));
+                                      slotDialog.current?.close();
+                                    }}
+                                  >
+                                    {t}
+                                  </button>
+                                ))}
+                              </div>
+                            </section>
+                          ))}
+                      </div>
+                    </div>
+                  </dialog>
                 </>
               )}
             </div>

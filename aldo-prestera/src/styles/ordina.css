@@ -1501,6 +1501,47 @@ body:has(.o-confirm) {
 .r-label-gap {
   margin-top: 14px;
 }
+/* Giorni: pulsanti in fila, scorrevoli in orizzontale se non entrano */
+.r-days {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+}
+.r-day {
+  flex: 0 0 auto;
+  min-width: 78px;
+  min-height: 64px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: 1px solid var(--border-input);
+  background: var(--white);
+  scroll-snap-align: start;
+}
+.r-day:hover {
+  border-color: var(--text);
+}
+.r-day.is-on {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--paper);
+}
+.r-day__top {
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+.r-day__num {
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
 .r-wrap .o-cta {
   width: 100%;
 }
@@ -1522,8 +1563,5 @@ body:has(.o-confirm) {
 @media (max-width: 959px) {
   .r-wrap {
     padding: 22px 16px 40px;
-  }
-  .o-times {
-    grid-template-columns: repeat(3, 1fr);
   }
 }
