@@ -34,6 +34,16 @@ enum ModalitaOrdine {
   asporto
 }
 
+// Stati della prenotazione tavolo: decide Aldo (richiesta → confermata | rifiutata).
+// Il rifiuto automatico per mancata risposta usa "rifiutata" con un motivo_stato.
+// Niente tabelle per stati o storico, come per gli ordini.
+enum StatoPrenotazione {
+  richiesta
+  confermata
+  rifiutata
+  annullata
+}
+
 model Cliente {
   id                 BigInt   @id @default(autoincrement())
   email              String   @unique @db.VarChar(255)
@@ -46,8 +56,9 @@ model Cliente {
   creato_il          DateTime @default(now()) @db.DateTime(3)
   aggiornato_il      DateTime @updatedAt @db.DateTime(3)
 
-  indirizzi Indirizzo[]
-  ordini    Ordine[]
+  indirizzi    Indirizzo[]
+  ordini       Ordine[]
+  prenotazioni Prenotazione[]
 
   @@map("cliente")
 }
@@ -194,6 +205,37 @@ model RimborsoRiga {
   @@index([rimborso_id])
   @@index([riga_ordine_id])
   @@map("rimborso_riga")
+}
+
+// Prenotazione di un tavolo (decisioni nel CLAUDE.md in radice, sezione «Prenotazione tavoli»).
+// - nessuna tabella dei tavoli (sala variabile): solo quante persone e a che ora arrivano;
+// - nessuna durata né ora di fine;
+// - nessun limite automatico di coperti: è Aldo a garantire se c'è posto;
+// - nessun dato di contatto duplicato: nome, cognome, telefono ed email stanno su cliente.
+model Prenotazione {
+  id              BigInt            @id @default(autoincrement())
+  // Codice casuale non indovinabile per la pagina di attesa del cliente (mai l'id)
+  codice_pubblico String            @unique @db.VarChar(32)
+  cliente_id      BigInt
+  stato           StatoPrenotazione @default(richiesta)
+  // Motivo del rifiuto (anche quello automatico di scadenza)
+  motivo_stato    String?           @db.VarChar(200)
+  persone         Int
+  inizio          DateTime          @db.DateTime(3) // UTC: orario di arrivo prenotato
+  note            String?           @db.Text // solo note del cliente
+  // Promemoria libero di Aldo (es. "T3+T4 uniti"): non vincola niente
+  tavolo_note     String?           @db.VarChar(100)
+  creato_il       DateTime          @default(now()) @db.DateTime(3)
+  aggiornato_il   DateTime          @updatedAt @db.DateTime(3)
+
+  // Un cliente con prenotazioni non si può eliminare: come per gli ordini.
+  cliente Cliente @relation(fields: [cliente_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  // Copre "prenotazioni di un cliente" (colonna più a sinistra per la foreign key).
+  @@index([cliente_id, stato])
+  @@index([stato, inizio])
+  @@index([inizio])
+  @@map("prenotazione")
 }
 
 // Account di Aldo per /gestione: uno solo, senza ruoli (creato con `npm run admin:crea`).

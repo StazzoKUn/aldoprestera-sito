@@ -64,6 +64,31 @@ npm run dev             # http://localhost:3000
 
 Altri script: `npm run typecheck`, `npm run db:studio` (Prisma Studio), `npm run build` / `npm start`.
 
+## Prenotazione tavoli (in progettazione, nessun codice ancora)
+
+Decisioni del 2026-11-25. Si fa **prima di Stripe** (l'integrazione Stripe è sospesa). Unica fonte per questa funzione: non creare altri documenti di progetto.
+
+**Principi**
+- **Nessuna tabella dei tavoli**: la sala è variabile (due tavoli da 4 diventano uno da 8). La prenotazione dice solo **quante persone** e **a che ora arrivano**.
+- **Nessuna durata né ora di fine**: Aldo guarda chi è seduto, non gli orari. Niente `durata_minuti`.
+- **Decide Aldo, come per gli ordini**: il cliente manda una richiesta, Aldo la conferma o la rifiuta. **Nessun limite automatico di coperti** (come per gli slot degli ordini).
+- **Il form online è aperto a tutti**, senza tetto di persone: per i gruppi grandi si può anche telefonare, ma decide sempre Aldo.
+- Si prenota **fino a 7 giorni avanti** (gli ordini invece sono solo per oggi).
+- Nome e cognome in un **campo unico**, come nel form ordini (`ordini-api.ts` lo divide in `nome`/`cognome` per `Cliente`).
+
+**Stati** (`StatoPrenotazione`, enum): `richiesta`, `confermata`, `rifiutata`, `annullata`. Niente "arrivata" né "no show". Rifiuto automatico se Aldo non risponde (stessa logica degli ordini: applicata nelle letture, con `motivo_stato`); tempi da definire.
+
+**Tabella `Prenotazione`** (scelta A: **nessun dato duplicato** da `Cliente`; nome, cognome, telefono ed email si leggono da `Cliente`, come l'email dell'ordine):
+`id`, `codice_pubblico` (univoco, per la pagina di attesa del cliente, mai l'id), `cliente_id` (obbligatorio), `persone`, `inizio` (UTC), `note` (solo del cliente), `stato`, `motivo_stato`, `tavolo_note` (promemoria libero di Aldo, es. "T3+T4 uniti", non vincola niente), `creato_il`, `aggiornato_il`. Indici su `[stato, inizio]` e `inizio`. Il sito deve tenere aggiornato il telefono di `Cliente` a ogni prenotazione.
+
+**Orari prenotabili**: gli stessi turni di `orderHours` in `aldo-prestera/src/data/site.ts` (unica fonte, non duplicarli), arrivi ogni 15 minuti, **primo arrivo = l'apertura del turno** (si prenota appena aprono). **Ultimo arrivo prenotabile: le 16:00 a pranzo e le 23:00 a cena** (non si prenota fino alla chiusura), e comunque mai oltre la chiusura del turno. Giorni di apertura: lunedì e mercoledì solo cena; gli altri giorni pranzo e cena.
+
+**Da definire prima del codice**: tempi del rifiuto automatico; testi e pagina del cliente; email di conferma/rifiuto (stesso schema degli ordini).
+
+**Rimandato (non deciso)**: `BloccoPrenotazioni` (Aldo che chiude una serata o un turno). Il blocco delle fasce è già previsto «alla fine» per gli ordini: se si fa, un'unica soluzione per entrambi.
+
+**Fuori ambito per ora**: pannello di Aldo, pagina del cliente, email e Stripe; si iniziano solo su richiesta esplicita. La modifica di `schema.prisma` e la migration vanno confermate prima.
+
 ## Lavorare su due PC
 
 - All'inizio di ogni sessione: `git pull`. Alla fine: commit e `git push` (solo se l'utente lo chiede).
