@@ -1484,6 +1484,10 @@ body:has(.o-confirm) {
 .r-wrap {
   padding: 44px var(--gutter) 64px;
 }
+/* Modulo centrato nella pagina (su desktop non resta incollato a sinistra) */
+.r-wrap .o-form {
+  margin: 0 auto;
+}
 .r-notice {
   margin: 0;
   padding: 16px 18px;
