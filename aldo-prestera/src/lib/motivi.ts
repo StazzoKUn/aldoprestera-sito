@@ -8,3 +8,11 @@ export const MOTIVI_RIFIUTO = [
   'Non siamo riusciti a contattarti',
   'Annullato su tua richiesta',
 ] as const;
+
+// Motivi di rifiuto delle prenotazioni: devono coincidere con ordini-api
+// (ordini-api/src/modules/prenotazioni/prenotazioni.motivi.ts). Lista provvisoria, da confermare con Aldo.
+export const MOTIVI_RIFIUTO_PRENOTAZIONE = [
+  "Siamo al completo in quell'orario",
+  'Locale chiuso in quella data',
+  'Non siamo riusciti a contattarti',
+] as const;

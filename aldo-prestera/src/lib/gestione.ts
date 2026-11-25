@@ -58,6 +58,25 @@ export interface Scheda {
   totale: number;
 }
 
+/** Scheda prenotazione restituita da ordini-api per il pannello (nome e telefono letti da Cliente) */
+export interface SchedaPrenotazione {
+  id: string;
+  /** Codice della pagina di stato /prenotazione/<codice> */
+  codice_pubblico: string;
+  stato: 'richiesta' | 'confermata' | 'rifiutata' | 'annullata';
+  motivo_stato: string | null;
+  scaduta: boolean;
+  persone: number;
+  inizio: string;
+  note: string | null;
+  tavolo_note: string | null;
+  creato_il: string;
+  aggiornato_il: string;
+  nome_cliente: string;
+  telefono_cliente: string | null;
+  cliente_email: string;
+}
+
 /**
  * Esegue un'azione del pannello: controlla l'Origin (se scrive) e la sessione nel cookie, poi
  * traduce gli errori di ordini-api in risposte chiare (401 sessione scaduta, 400/404/409 con il

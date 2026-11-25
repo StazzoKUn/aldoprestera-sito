@@ -1,11 +1,21 @@
 import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
-import type { ComponentChildren } from 'preact';
 import { eur } from '../../lib/format';
 import { MOTIVI_RIFIUTO } from '../../lib/motivi';
 import type { Scheda } from '../../lib/gestione';
+import { api } from './api';
+import { Modal } from './Modal';
+import {
+  CancelReservationModal,
+  PrenotazioniColumns,
+  RejectReservationModal,
+  type Lists as PrenLists,
+  type PrenAction,
+  type PrenCard,
+} from './PrenotazioniView';
 
-// Pannello di Aldo (/gestione): tre liste che si aggiornano ogni 3 secondi, suono finché ci sono
-// ordini da accettare, azioni con un tocco e storico. Parla solo con /api/gestione/*.
+// Pannello di Aldo (/gestione): tre liste di ordini e tre di prenotazioni che si aggiornano ogni 3 secondi,
+// suono finché ci sono ordini da accettare o prenotazioni da confermare, azioni con un tocco e storico ordini.
+// Parla solo con /api/gestione/*.
 
 type Card = Scheda & { email_non_inviata: boolean };
 interface Lists {
@@ -25,22 +35,6 @@ const BEEP_EVERY_MS = 4_000;
 const UNDO_MS = 6_000;
 
 /* ---------- Utilità ---------- */
-
-async function api(path: string, body?: unknown): Promise<{ ok: boolean; status: number; data: any }> {
-  try {
-    const res = await fetch(path, {
-      method: body === undefined ? 'GET' : 'POST',
-      headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
-      body: body === undefined ? undefined : JSON.stringify(body),
-      cache: 'no-store',
-    });
-    const data = await res.json().catch(() => null);
-    if (res.status === 401) location.assign('/gestione/login'); // sessione scaduta
-    return { ok: res.ok && data?.ok !== false, status: res.status, data };
-  } catch {
-    return { ok: false, status: 0, data: null };
-  }
-}
 
 const hhmm = (iso: string) =>
   new Intl.DateTimeFormat('it-IT', { timeZone: 'Europe/Rome', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(iso));
@@ -78,23 +72,6 @@ function beep(ctx: AudioContext) {
 }
 
 /* ---------- Componenti ---------- */
-
-function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: ComponentChildren }) {
-  const ref = useRef<HTMLDialogElement>(null);
-  useEffect(() => {
-    const d = ref.current;
-    if (d && !d.open) d.showModal();
-    return () => d?.close();
-  }, []);
-  return (
-    <dialog ref={ref} class="g-modal" onClose={onClose} onCancel={onClose} aria-labelledby="g-modal-title">
-      <div class="g-modal__body">
-        <h2 id="g-modal-title">{title}</h2>
-        {children}
-      </div>
-    </dialog>
-  );
-}
 
 function OrderCard(p: {
   o: Card;
@@ -309,24 +286,33 @@ export default function Pannello({ userName, logo }: Props) {
   const [rejecting, setRejecting] = useState<Card | null>(null);
   /** si incrementa a ogni aggiornamento: lo storico si ricarica insieme alle liste */
   const [tick, setTick] = useState(0);
+  // Prenotazioni tavolo
+  const [area, setArea] = useState<'ordini' | 'prenotazioni'>('ordini');
+  const [prenLists, setPrenLists] = useState<PrenLists | null>(null);
+  const [prenTab, setPrenTab] = useState<Tab>('da');
+  const [prenRejecting, setPrenRejecting] = useState<PrenCard | null>(null);
+  const [prenCanceling, setPrenCanceling] = useState<PrenCard | null>(null);
 
   const audio = useRef<AudioContext | null>(null);
   const wake = useRef<{ release: () => Promise<void> } | null>(null);
   const toastTimer = useRef<number>(0);
   const [wakeOk, setWakeOk] = useState(true);
 
-  const pending = lists?.da_accettare.length ?? 0;
+  const pendingOrders = lists?.da_accettare.length ?? 0;
+  const pendingBookings = prenLists?.da_confermare.length ?? 0;
+  /** ordini da accettare + prenotazioni da confermare: fanno suonare il pannello */
+  const pending = pendingOrders + pendingBookings;
 
   const inFlight = useRef(false);
   const signature = useRef('');
+  const prenSignature = useRef('');
   const reload = useCallback(async () => {
     if (inFlight.current) return; // con il controllo frequente non si sovrappongono le richieste
     inFlight.current = true;
     try {
-      const res = await api('/api/gestione/ordini');
+      const [res, prenRes] = await Promise.all([api('/api/gestione/ordini'), api('/api/gestione/prenotazioni')]);
       if (res.ok && res.data) {
         const next: Lists = { da_accettare: res.data.da_accettare, in_corso: res.data.in_corso, chiusi_oggi: res.data.chiusi_oggi };
-        setOffline(false);
         // aggiorna solo se è cambiato qualcosa (ordini, stati, email): niente ridisegni né richieste inutili allo storico
         const sig = JSON.stringify(next);
         if (sig !== signature.current) {
@@ -334,9 +320,17 @@ export default function Pannello({ userName, logo }: Props) {
           setLists(next);
           setTick((n) => n + 1);
         }
-      } else {
-        setOffline(true); // avviso rosso finché non torna la connessione
       }
+      if (prenRes.ok && prenRes.data) {
+        const next: PrenLists = { da_confermare: prenRes.data.da_confermare, confermate: prenRes.data.confermate, chiuse: prenRes.data.chiuse };
+        const sig = JSON.stringify(next);
+        if (sig !== prenSignature.current) {
+          prenSignature.current = sig;
+          setPrenLists(next);
+        }
+      }
+      // avviso rosso finché non tornano entrambe le liste
+      setOffline(!(res.ok && res.data) || !(prenRes.ok && prenRes.data));
     } finally {
       inFlight.current = false;
     }
@@ -431,11 +425,41 @@ export default function Pannello({ userName, logo }: Props) {
     reload();
   };
 
-  const tabs: { id: Tab; label: string; n: number }[] = [
-    { id: 'da', label: 'Da accettare', n: lists?.da_accettare.length ?? 0 },
-    { id: 'corso', label: 'In corso', n: lists?.in_corso.length ?? 0 },
-    { id: 'chiusi', label: 'Chiusi oggi', n: lists?.chiusi_oggi.length ?? 0 },
-  ];
+  /** Conferma, rifiuto (con motivo) o annullo di una prenotazione: l'email al cliente la manda il sito */
+  const setPrenStato = async (o: PrenCard, stato: PrenAction, motivo?: string) => {
+    setBusyId(o.id);
+    const res = await api(`/api/gestione/prenotazioni/${o.id}/stato`, { stato, motivo });
+    setBusyId(null);
+    if (!res.ok) {
+      say(res.data?.error ?? 'Operazione non riuscita: controlla la connessione.', { error: true });
+    } else if (res.data?.prenotazione?.email_non_inviata) {
+      say('Fatto, ma l’email al cliente non è partita: chiamalo.', { error: true });
+    } else {
+      say(stato === 'confermata' ? 'Prenotazione confermata: il cliente riceve l’email.' : 'Fatto: il cliente riceve l’email.');
+    }
+    reload();
+  };
+
+  const setTavolo = async (o: PrenCard, nota: string | null) => {
+    const res = await api(`/api/gestione/prenotazioni/${o.id}/tavolo`, { tavolo_note: nota });
+    if (!res.ok) say(res.data?.error ?? 'Nota non salvata: controlla la connessione.', { error: true });
+    reload();
+  };
+
+  const tabs: { id: Tab; label: string; n: number }[] =
+    area === 'ordini'
+      ? [
+          { id: 'da', label: 'Da accettare', n: lists?.da_accettare.length ?? 0 },
+          { id: 'corso', label: 'In corso', n: lists?.in_corso.length ?? 0 },
+          { id: 'chiusi', label: 'Chiusi oggi', n: lists?.chiusi_oggi.length ?? 0 },
+        ]
+      : [
+          { id: 'da', label: 'Da confermare', n: prenLists?.da_confermare.length ?? 0 },
+          { id: 'corso', label: 'Confermate', n: prenLists?.confermate.length ?? 0 },
+          { id: 'chiusi', label: 'Chiuse', n: prenLists?.chiuse.length ?? 0 },
+        ];
+  const activeTab = area === 'ordini' ? tab : prenTab;
+  const setActiveTab = area === 'ordini' ? setTab : setPrenTab;
 
   const column = (id: Tab, title: string, items: Card[] | undefined, empty: string) => (
     <section class={`g-col g-col--${id}${tab === id ? ' is-active' : ''}`} aria-labelledby={`g-col-${id}`}>
@@ -487,25 +511,66 @@ export default function Pannello({ userName, logo }: Props) {
       <header class="g-header">
         <img src={logo.src} srcset={logo.srcset} alt="Aldo Prestera Pizzeria" height={40} />
         <span class="g-live">In servizio</span>
-        <div class="g-seg" role="group" aria-label="Vista">
-          <button aria-pressed={view === 'oggi'} onClick={() => setView('oggi')}>
-            Oggi
-          </button>
-          <button aria-pressed={view === 'storico'} onClick={() => setView('storico')}>
-            Storico
-          </button>
-        </div>
+        {area === 'ordini' && (
+          <div class="g-seg" role="group" aria-label="Vista">
+            <button aria-pressed={view === 'oggi'} onClick={() => setView('oggi')}>
+              Oggi
+            </button>
+            <button aria-pressed={view === 'storico'} onClick={() => setView('storico')}>
+              Storico
+            </button>
+          </div>
+        )}
         <button class="g-link g-header__exit" onClick={logout} title={userName}>
           Esci
         </button>
       </header>
       {!wakeOk && <p class="g-note">Lo schermo potrebbe spegnersi: impostalo su “sempre acceso” o tieni il telefono in carica.</p>}
 
-      {view === 'oggi' ? (
+      <nav class="g-areas" aria-label="Sezione">
+        <button class={area === 'ordini' ? 'is-active' : ''} aria-current={area === 'ordini' ? 'true' : undefined} onClick={() => setArea('ordini')}>
+          Ordini
+          <span class={`g-badge${pendingOrders > 0 ? ' g-badge--alert' : ''}`}>{pendingOrders}</span>
+        </button>
+        <button
+          class={area === 'prenotazioni' ? 'is-active' : ''}
+          aria-current={area === 'prenotazioni' ? 'true' : undefined}
+          onClick={() => setArea('prenotazioni')}
+        >
+          Prenotazioni
+          <span class={`g-badge${pendingBookings > 0 ? ' g-badge--alert' : ''}`}>{pendingBookings}</span>
+        </button>
+      </nav>
+
+      {area === 'prenotazioni' ? (
+        <>
+          <nav class="g-tabs" aria-label="Liste prenotazioni">
+            {tabs.map((t) => (
+              <button key={t.id} class={activeTab === t.id ? 'is-active' : ''} aria-current={activeTab === t.id ? 'true' : undefined} onClick={() => setActiveTab(t.id)}>
+                {t.label}
+                <span class={`g-badge${t.id === 'da' && t.n > 0 ? ' g-badge--alert' : ''}`}>{t.n}</span>
+              </button>
+            ))}
+          </nav>
+          {!prenLists ? (
+            <p class="g-empty">Carico le prenotazioni…</p>
+          ) : (
+            <PrenotazioniColumns
+              lists={prenLists}
+              tab={prenTab}
+              busyId={busyId}
+              onAction={(o, a) => setPrenStato(o, a)}
+              onAskReject={setPrenRejecting}
+              onAskCancel={setPrenCanceling}
+              onTable={setTavolo}
+            />
+          )}
+        </>
+      ) : view === 'oggi' ? (
         <>
           <nav class="g-tabs" aria-label="Liste ordini">
             {tabs.map((t) => (
-              <button key={t.id} class={tab === t.id ? 'is-active' : ''} aria-current={tab === t.id ? 'true' : undefined} onClick={() => setTab(t.id)}>
+              <button key={t.id} class={activeTab === t.id ? 'is-active' : ''} aria-current={activeTab === t.id ? 'true' : undefined} onClick={() => setActiveTab(t.id)}>
                 {t.label}
                 <span class={`g-badge${t.id === 'da' && t.n > 0 ? ' g-badge--alert' : ''}`}>{t.n}</span>
               </button>
@@ -543,6 +608,29 @@ export default function Pannello({ userName, logo }: Props) {
             </button>
           )}
         </div>
+      )}
+
+      {prenRejecting && (
+        <RejectReservationModal
+          o={prenRejecting}
+          onCancel={() => setPrenRejecting(null)}
+          onConfirm={(m) => {
+            const o = prenRejecting;
+            setPrenRejecting(null);
+            setPrenStato(o, 'rifiutata', m);
+          }}
+        />
+      )}
+      {prenCanceling && (
+        <CancelReservationModal
+          o={prenCanceling}
+          onCancel={() => setPrenCanceling(null)}
+          onConfirm={() => {
+            const o = prenCanceling;
+            setPrenCanceling(null);
+            setPrenStato(o, 'annullata');
+          }}
+        />
       )}
 
       {rejecting && (
