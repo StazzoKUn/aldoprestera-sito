@@ -74,10 +74,10 @@ export type FieldErrors = Partial<
   Record<'name' | 'phone' | 'email' | 'city' | 'street' | 'number' | 'cap' | 'province' | 'slot' | 'privacy' | 'cart', string>
 >;
 
-const PHONE_RE = /^\+?[\d\s./-]{6,20}$/;
+export const PHONE_RE = /^\+?[\d\s./-]{6,20}$/;
 const CAP_RE = /^\d{5}$/;
 const PROVINCE_RE = /^[A-Za-z]{2}$/;
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 /** Validazione condivisa tra modulo e server */
 export const validateOrder = (

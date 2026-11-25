@@ -10,7 +10,7 @@ export interface PlacedOrder extends OrderRequest {
   total: number;
 }
 
-const esc = (s: string) =>
+export const esc = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 
 const modeTxt = (m: Mode) => (m === 'consegna' ? 'Consegna' : 'Ritiro');
@@ -202,9 +202,9 @@ export const decisionHtml = (o: DecisionOrder, d: Decision, logoUrl?: string) =>
 
 /* ---------- Invio ---------- */
 
-const env = (k: string): string | undefined => process.env[k] ?? import.meta.env[k];
+export const env = (k: string): string | undefined => process.env[k] ?? import.meta.env[k];
 
-const transport = () => {
+export const transport = () => {
   const host = env('SMTP_HOST');
   if (!host) return null;
   const port = Number(env('SMTP_PORT') ?? 587);

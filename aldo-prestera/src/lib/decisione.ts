@@ -3,7 +3,9 @@
 import { fullAddress, orderHours } from '../data/site';
 import { sendDecisionEmail, type Decision, type DecisionOrder } from './notify';
 import type { Scheda } from './gestione';
-import type { PublicOrder } from './ordini-api';
+import { sendReservationEmail, type ReservationDecision, type ReservationEmail } from './notify-prenotazione';
+import type { PublicOrder, PublicReservation } from './ordini-api';
+import { whenLabel } from './prenotazione';
 
 /**
  * Numeri d'ordine per cui l'email al cliente NON è partita (il pannello mostra "Email non inviata").
@@ -44,6 +46,51 @@ export const cardToDecisionOrder = (c: Scheda, base?: URL): DecisionOrder => ({
       ? [c.indirizzo ?? 'Consegna a domicilio', c.citofono ? `citofono ${c.citofono}` : ''].filter(Boolean).join(' · ')
       : `Ritiro in pizzeria: ${fullAddress}`,
 });
+
+/* ---------- Prenotazioni tavolo ---------- */
+
+/**
+ * Codici pubblici delle prenotazioni per cui l'email al cliente NON è partita (il pannello mostrerà "Email non inviata").
+ * Sta in memoria come per gli ordini: si perde al riavvio del sito.
+ */
+export const reservationEmailFailed = new Set<string>();
+
+/** Manda l'email di decisione della prenotazione e ricorda se è fallita */
+export async function sendReservationDecision(
+  code: string,
+  o: ReservationEmail,
+  d: ReservationDecision,
+  logoUrl?: string,
+): Promise<boolean> {
+  const sent = await sendReservationEmail(o, d, logoUrl);
+  if (sent) reservationEmailFailed.delete(code);
+  else reservationEmailFailed.add(code);
+  return sent;
+}
+
+/** Indirizzo della pagina di stato /prenotazione/<codice> */
+export const reservationUrl = (code: string | undefined, base: URL | undefined) =>
+  code && base ? new URL(`/prenotazione/${encodeURIComponent(code)}`, base).href : undefined;
+
+/** Email di rifiuto per una richiesta scaduta proprio ora (i dati vengono dalla lettura pubblica dell'API) */
+export function notifyReservationExpired(code: string, v: PublicReservation, logoUrl?: string, base?: URL): Promise<boolean> {
+  const c = v.contatto;
+  if (!c) return Promise.resolve(true);
+  return sendReservationDecision(
+    code,
+    {
+      name: c.nome,
+      email: c.email,
+      people: v.persone,
+      when: whenLabel(v.inizio),
+      notes: v.note,
+      statusUrl: reservationUrl(code, base),
+      previous: 'richiesta',
+    },
+    { kind: 'rifiutata', reason: v.motivo_stato ?? 'La pizzeria non ha potuto rispondere' },
+    logoUrl,
+  );
+}
 
 /** Email di rifiuto per un ordine scaduto proprio ora (i dati vengono dalla lettura pubblica dell'API) */
 export function notifyExpired(v: PublicOrder, logoUrl?: string, base?: URL): Promise<boolean> {

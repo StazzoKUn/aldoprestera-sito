@@ -1,0 +1,21 @@
+---
+import { getImage } from 'astro:assets';
+import Layout from '../layouts/Layout.astro';
+import ReserveApp from '../components/order/ReserveApp';
+import { site } from '../data/site';
+import logoChiaro from '../assets/logo-chiaro.png';
+import '../styles/ordina.css';
+
+// Modulo di prenotazione tavolo: gli orari li calcola il server a ogni richiesta (/api/prenotazione-slot)
+export const prerender = false;
+
+const [logo1, logo2] = await Promise.all([
+  getImage({ src: logoChiaro, height: 52, format: 'png' }),
+  getImage({ src: logoChiaro, height: 104, format: 'png' }),
+]);
+const logo = { src: logo1.src, srcset: `${logo1.src} 1x, ${logo2.src} 2x` };
+---
+
+<Layout title={`Prenota un tavolo · ${site.name}`} description="Prenota un tavolo da Aldo Prestera Pizzeria: scegli il giorno, l'orario e quante persone siete." bg="paper">
+  <ReserveApp client:load logo={logo} phone={site.phone} phoneHref={site.phoneHref} />
+</Layout>

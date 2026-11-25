@@ -254,6 +254,57 @@ export async function createOrder(o: NewOrder): Promise<{ id: string; number: st
   return { id: ordine.id, number: ordine.numero_ordine, code: ordine.codice_pubblico };
 }
 
+/* ---------- Prenotazioni tavolo ---------- */
+
+export interface NewReservation {
+  customer: { name: string; email: string; phone: string; notes: string };
+  people: number;
+  /** Orario di arrivo prenotato, calcolato dal server dal giorno e dallo slot scelti */
+  start: Date;
+}
+
+/**
+ * Salva la richiesta (stato "richiesta"). Nome e telefono stanno solo su Cliente (nessun duplicato
+ * sulla prenotazione): se il cliente esiste già li aggiorna con quelli appena inseriti.
+ * Gli ordini già fatti non cambiano, hanno la loro copia.
+ */
+export async function createReservation(r: NewReservation): Promise<{ id: string; code: string }> {
+  const clienteId = await findOrCreateCliente(r.customer);
+  const telefono = apiPhone(r.customer.phone);
+  await call(`/clienti/${clienteId}`, {
+    method: 'PATCH',
+    body: { ...splitName(r.customer.name), ...(telefono ? { telefono } : {}) },
+  });
+  const p = await call<{ id: string; codice_pubblico: string }>('/prenotazioni', {
+    method: 'POST',
+    body: {
+      cliente_id: clienteId,
+      persone: r.people,
+      inizio: r.start.toISOString(),
+      note: r.customer.notes.trim() || null,
+    },
+  });
+  return { id: p.id, code: p.codice_pubblico };
+}
+
+export type ReservationState = 'richiesta' | 'confermata' | 'rifiutata' | 'annullata';
+
+/** Risposta dell'API per la pagina di attesa della prenotazione */
+export interface PublicReservation {
+  stato: ReservationState;
+  motivo_stato: string | null;
+  persone: number;
+  inizio: string;
+  note: string | null;
+  attesa_secondi: number;
+  appena_scaduta: boolean;
+  /** Solo se la richiesta è scaduta proprio ora: serve per l'email, non va mandato al browser */
+  contatto: { nome: string; email: string } | null;
+}
+
+export const getPublicReservation = (code: string) =>
+  call<PublicReservation>(`/prenotazioni/pubblico/${encodeURIComponent(code)}`);
+
 /* ---------- Pagina di attesa ---------- */
 
 export type OrderState = 'bozza' | 'ricevuto' | 'accettato' | 'consegnato' | 'rifiutato' | 'annullato';

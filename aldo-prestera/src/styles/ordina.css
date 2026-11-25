@@ -1479,3 +1479,51 @@ body:has(.o-confirm) {
     color 0.18s ease,
     opacity 0.18s ease;
 }
+
+/* ---------- Prenotazione tavolo ---------- */
+.r-wrap {
+  padding: 44px var(--gutter) 64px;
+}
+.r-notice {
+  margin: 0;
+  padding: 16px 18px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--red);
+  font-size: 15px;
+  line-height: 1.5;
+  font-weight: 300;
+}
+.r-notice a {
+  color: var(--red);
+  font-weight: 500;
+}
+.r-label-gap {
+  margin-top: 14px;
+}
+.r-wrap .o-cta {
+  width: 100%;
+}
+.r-call-note {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--on-dark-muted);
+}
+.r-call-note a {
+  color: var(--on-dark, #f2efe9);
+  text-decoration: underline;
+}
+.r-recap-note {
+  margin: 10px 0 0;
+  font-size: 14px;
+  color: var(--on-dark-muted);
+}
+@media (max-width: 959px) {
+  .r-wrap {
+    padding: 22px 16px 40px;
+  }
+  .o-times {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

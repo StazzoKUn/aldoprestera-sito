@@ -87,7 +87,9 @@ Decisioni del 2026-11-25. Si fa **prima di Stripe** (l'integrazione Stripe è so
 
 **Orari prenotabili**: gli stessi turni di `orderHours` in `aldo-prestera/src/data/site.ts` (unica fonte, non duplicarli), arrivi ogni 15 minuti, **primo arrivo = l'apertura del turno** (si prenota appena aprono). **Ultimo arrivo prenotabile: le 16:00 a pranzo e le 23:00 a cena** (non si prenota fino alla chiusura), e comunque mai oltre la chiusura del turno. Giorni di apertura: lunedì e mercoledì solo cena; gli altri giorni pranzo e cena.
 
-**Da definire prima del codice del sito**: testi e pagina del cliente; email di conferma/rifiuto (stesso schema degli ordini).
+**Flusso cliente nel sito fatto (passo 4, 2026-11-25)**: pagina `/prenota` (isola `ReserveApp.tsx`: giorno, orario di arrivo a pulsanti Pranzo/Sera, persone, contatti, note, privacy; avviso «per annullare o modificare chiama il ristorante» con il telefono di `site.ts`), `POST /api/prenotazione` (rate limit 6 ogni 10 min per IP, rivalida orario con `isReservationSlotAvailable`, salva con `createReservation` in `ordini-api.ts`), pagina di attesa `/prenotazione/<codice>` (`ReservationWaitApp.tsx`, polling 15 s, `noindex`) con `GET /api/prenotazione/stato/<codice>`. Nome e telefono vivono solo su `Cliente`: a ogni prenotazione il sito li **aggiorna** sul cliente esistente (stessa email). Email al cliente in `src/lib/notify-prenotazione.ts` (stesso stile e stessa SMTP degli ordini; testi diversi se la prenotazione era già confermata) con `sendReservationDecision` e `reservationEmailFailed` (in memoria, per codice) in `decisione.ts`; per ora parte solo alla scadenza automatica, le altre decisioni le manderà il pannello (passo 5). Nessuna email ad Aldo per le nuove richieste (le vede nel pannello). La pagina `/prenota` NON è ancora linkata da home e menu: decidere dove metterla.
+
+**Da definire**: i testi definitivi con Aldo (motivi di rifiuto, copy della pagina).
 
 **Rimandato (non deciso)**: `BloccoPrenotazioni` (Aldo che chiude una serata o un turno). Il blocco delle fasce è già previsto «alla fine» per gli ordini: se si fa, un'unica soluzione per entrambi.
 
